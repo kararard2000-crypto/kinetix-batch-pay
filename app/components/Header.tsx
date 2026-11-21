@@ -97,7 +97,7 @@ export default function Header({
           </button>
 
           {showNetworkDetails && (
-            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 sm:left-auto sm:right-0 sm:translate-x-0 w-72 bg-[#0B1120] border border-slate-700 rounded-2xl shadow-2xl z-[100] p-4 space-y-4 max-h-[70vh] overflow-y-auto">
+            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 sm:left-auto sm:right-0 sm:translate-x-0 w-[calc(100vw-2rem)] sm:w-80 bg-[#0B1120] border border-slate-700 rounded-2xl shadow-2xl z-[100] p-4 space-y-4 max-h-[70vh] overflow-y-auto">
               
               {/* Network Status */}
               <div>
