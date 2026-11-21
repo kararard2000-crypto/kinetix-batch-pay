@@ -1,163 +1,172 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-import type { Fee } from "@/lib/batch";
 
-export default function Admin() {
-  const { publicKey, signMessage } = useWallet();
-  const [cfg, setCfg] = useState<Fee | null>(null); 
-  const [stats, setStats] = useState<any>(null); 
-  const [msg, setMsg] = useState("");
+export default function AdminDashboard() {
+  const { publicKey, connected } = useWallet();
+  const [isSessionActive, setIsSessionActive] = useState(false); // جلسة مؤقتة
+  const [stats, setStats] = useState({
+    totalTransactions: 0,
+    totalVolume: 0,
+    totalFees: 0,
+    uniqueUsers: 0,
+    isPaused: false,
+  });
+  const [isLoading, setIsLoading] = useState(true);
 
-  async function login() {
-    try {
-      if (!publicKey || !signMessage) {
-        throw new Error("Connect a wallet that supports message signing.");
-      }
-      
-      const resNonce = await fetch("/api/admin");
-      if (!resNonce.ok) throw new Error("Failed to fetch login nonce.");
-      const { nonce, message } = await resNonce.json();
+  // 👑 عنوان محفظة المالك
+  const OWNER_WALLET = "HXbcGYiYFPuq41oCL8wo232J6cA8v7XH2gYoHr1kBF9r";
 
-      const sig = await signMessage(new TextEncoder().encode(message));
-      
-      const r = await fetch("/api/admin", { 
-        method: "POST", 
-        headers: { "Content-Type": "application/json" }, 
-        body: JSON.stringify({ 
-          publicKey: publicKey.toBase58(), 
-          signature: Buffer.from(sig).toString("base64"), 
-          nonce 
-        }) 
-      });
-      
-      if (!r.ok) {
-        const errData = await r.json();
-        throw new Error(errData.error || "Authentication failed.");
-      }
+  useEffect(() => {
+    // إذا كانت المحفظة متصلة وغير مصرح، لا نفعل شيئاً
+    // المستخدم يجب أن يضغط على زر "تأكيد الدخول" يدوياً
+    setIsLoading(false);
+  }, [connected, publicKey]);
 
-      const [cfgRes, statsRes] = await Promise.all([
-        fetch("/api/config"),
-        fetch("/api/record")
-      ]);
-
-      if (!cfgRes.ok || !statsRes.ok) throw new Error("Failed to load dashboard data.");
-
-      setCfg(await cfgRes.json()); 
-      setStats(await statsRes.json()); 
-      setMsg("");
-    } catch (e: any) { 
-      setMsg(e.message || "An error occurred during login."); 
+  const handleConfirmLogin = () => {
+    if (connected && publicKey && publicKey.toBase58() === OWNER_WALLET) {
+      setIsSessionActive(true);
+    } else {
+      alert("Access Denied: You are not the owner.");
     }
-  }
+  };
 
-  async function save() {
-    try {
-      const r = await fetch("/api/config", { 
-        method: "PUT", 
-        headers: { "Content-Type": "application/json" }, 
-        body: JSON.stringify(cfg) 
-      });
-      const j = await r.json(); 
-      if (r.ok) {
-        setCfg(j); 
-        setMsg("Settings saved successfully.");
-      } else {
-        setMsg(j.error || "Failed to save settings.");
-      }
-    } catch (err) {
-      setMsg("Network error while saving settings.");
-    }
-  }
+  // 📊 جلب الإحصائيات (فقط عندما تكون الجلسة نشطة)
+  useEffect(() => {
+    if (!isSessionActive) return;
+    
+    fetch("/api/admin/stats")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setStats(data.stats);
+        }
+      })
+      .catch((err) => console.error("Failed to load stats:", err));
+  }, [isSessionActive]);
 
-  const set = (p: Partial<Fee>) => setCfg((c) => ({ ...c!, ...p }));
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Owner dashboard</h1>
-        <WalletMultiButton />
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-400">
+        Loading...
       </div>
-      
-      {!cfg ? (
-        <div className="card space-y-3">
-          <p className="text-sm text-slate-400">Sign a message with the owner wallet to unlock settings. Nothing is sent on-chain.</p>
-          <button className="btn" onClick={login}>Sign in</button>
-        </div>
-      ) : (
-        <>
-          <div className="grid gap-4 sm:grid-cols-4">
-            {[
-              ["Batches", stats?.batches], 
-              ["Active users", stats?.users], 
-              ["Fee revenue (SOL)", ((stats?.revenueLamports ?? 0) / 1e9).toFixed(4)], 
-              ["SOL volume", (stats?.volume?.SOL ?? 0).toFixed(2)]
-            ].map(([k, v]) => (
-              <div key={k as string} className="card">
-                <div className="text-sm text-slate-400">{k}</div>
-                <div className="mt-1 text-2xl">{v ?? 0}</div>
-              </div>
-            ))}
+    );
+  }
+
+  // 🔒 صفحة تسجيل الدخول
+  if (!isSessionActive) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+        <div className="max-w-md w-full p-8 rounded-3xl bg-slate-900/80 border border-purple-500/30 backdrop-blur-xl shadow-2xl text-center">
+          <div className="mb-6">
+            <h1 className="text-2xl font-extrabold text-white">🔐 Owner Access Only</h1>
+            <p className="text-sm text-slate-400 mt-2">
+              {connected 
+                ? "Please confirm your identity to access the dashboard." 
+                : "Please connect your owner wallet to continue."}
+            </p>
           </div>
           
-          <div className="card grid gap-4 sm:grid-cols-2">
-            <label className="text-sm">
-              Fee type
-              <select 
-                className="field mt-1" 
-                value={cfg.mode} 
-                onChange={(e) => set({ mode: e.target.value as Fee["mode"] })}
-              >
-                <option value="flat">Flat SOL per batch</option>
-                <option value="percent">Percentage of batch</option>
-              </select>
-            </label>
-            
-            <label className="text-sm">
-              {cfg.mode === "flat" ? "Flat fee (SOL)" : "Percentage (max 5%)"}
-              <input 
-                className="field mt-1" 
-                type="number" 
-                step="0.001" 
-                value={cfg.mode === "flat" ? cfg.flatLamports / 1e9 : cfg.bps / 100}
-                onChange={(e) => set(cfg.mode === "flat" ? { flatLamports: Math.round(Number(e.target.value) * 1e9) } : { bps: Math.round(Number(e.target.value) * 100) })} 
-              />
-            </label>
-            
-            <label className="text-sm sm:col-span-2">
-              Treasury wallet
-              <input 
-                className="field mt-1 font-mono" 
-                value={cfg.treasury} 
-                onChange={(e) => set({ treasury: e.target.value })} 
-              />
-            </label>
-            
-            <label className="flex items-center gap-2 text-sm">
-              <input 
-                type="checkbox" 
-                checked={cfg.free} 
-                onChange={(e) => set({ free: e.target.checked })} 
-              />
-              Free promo mode
-            </label>
-            
-            <label className="flex items-center gap-2 text-sm text-red-300">
-              <input 
-                type="checkbox" 
-                checked={cfg.paused} 
-                onChange={(e) => set({ paused: e.target.checked })} 
-              />
-              Emergency pause
-            </label>
-            
-            <button className="btn sm:col-span-2" onClick={save}>Save settings</button>
+          <div className="flex justify-center mb-4">
+            <WalletMultiButton className="!bg-gradient-to-r !from-purple-600 !to-indigo-600 hover:!from-purple-500 hover:!to-indigo-500 !transition-all !duration-300 !rounded-xl !font-semibold !shadow-lg !shadow-purple-600/25" />
           </div>
-        </>
-      )}
-      
-      {msg && <p className="text-sm text-slate-300">{msg}</p>}
+
+          {connected && (
+             <div className="mt-4">
+               <div className="p-3 rounded-lg bg-slate-950/50 border border-slate-800 text-xs font-mono mb-3">
+                 Connected: {publicKey?.toBase58().slice(0, 6)}...{publicKey?.toBase58().slice(-4)}
+               </div>
+               
+               {publicKey?.toBase58() === OWNER_WALLET ? (
+                 <button 
+                   onClick={handleConfirmLogin}
+                   className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold hover:from-emerald-500 hover:to-teal-500 transition-all"
+                 >
+                   Confirm Admin Access
+                 </button>
+               ) : (
+                 <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs">
+                   This wallet does not have admin privileges.
+                 </div>
+               )}
+             </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // 📊 لوحة التحكم الرئيسية
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-slate-100 p-4 md:p-8 font-sans">
+      <div className="max-w-6xl mx-auto space-y-8">
+        
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 rounded-3xl bg-slate-900/60 border border-purple-500/20 backdrop-blur-xl">
+          <div>
+            <h1 className="text-2xl font-extrabold bg-gradient-to-r from-white to-purple-300 bg-clip-text text-transparent">
+              Kinetix Admin Dashboard
+            </h1>
+            <p className="text-xs text-slate-400 mt-1">Owner Control Panel</p>
+          </div>
+          <div className="text-right">
+            <div className="text-xs text-slate-400 mb-1">Connected as:</div>
+            <div className="text-sm font-mono text-emerald-400">
+              {publicKey?.toBase58().slice(0, 6)}...{publicKey?.toBase58().slice(-4)}
+            </div>
+          </div>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800">
+            <div className="text-xs text-slate-400 uppercase font-bold mb-2">Total Transactions</div>
+            <div className="text-3xl font-extrabold text-white">{stats.totalTransactions}</div>
+          </div>
+          <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800">
+            <div className="text-xs text-slate-400 uppercase font-bold mb-2">Total Volume (SOL)</div>
+            <div className="text-3xl font-extrabold text-cyan-400">{stats.totalVolume.toFixed(4)}</div>
+          </div>
+          <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800">
+            <div className="text-xs text-slate-400 uppercase font-bold mb-2">Total Fees (SOL)</div>
+            <div className="text-3xl font-extrabold text-emerald-400">{stats.totalFees.toFixed(4)}</div>
+          </div>
+          <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800">
+            <div className="text-xs text-slate-400 uppercase font-bold mb-2">Unique Users</div>
+            <div className="text-3xl font-extrabold text-purple-400">{stats.uniqueUsers}</div>
+          </div>
+        </div>
+
+        {/* Platform Status */}
+        <div className="p-6 rounded-3xl bg-slate-900/60 border border-slate-800">
+          <h2 className="text-lg font-bold text-white mb-4">Platform Controls</h2>
+          <div className="flex items-center justify-between p-4 rounded-xl bg-slate-950/50 border border-slate-800">
+            <div>
+              <div className="text-sm font-bold text-white">Platform Status</div>
+              <div className="text-xs text-slate-400 mt-1">
+                {stats.isPaused ? "🔴 Paused - Users cannot send batches" : "🟢 Active - Platform is live"}
+              </div>
+            </div>
+            <button
+              onClick={async () => {
+                const res = await fetch("/api/admin/toggle", { method: "POST" });
+                const data = await res.json();
+                if (data.success) {
+                  setStats({ ...stats, isPaused: data.isPaused });
+                }
+              }}
+              className={`px-6 py-2 rounded-xl font-bold text-sm transition-all ${
+                stats.isPaused
+                  ? "bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/30"
+                  : "bg-rose-500/20 border border-rose-500/40 text-rose-400 hover:bg-rose-500/30"
+              }`}
+            >
+              {stats.isPaused ? "Resume Platform" : "Pause Platform"}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
