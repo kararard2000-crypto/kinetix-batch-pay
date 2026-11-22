@@ -5,13 +5,14 @@ import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 
 export default function AdminDashboard() {
   const { publicKey, connected } = useWallet();
-  const [isSessionActive, setIsSessionActive] = useState(false); // جلسة مؤقتة
+  const [isSessionActive, setIsSessionActive] = useState(false);
   const [stats, setStats] = useState({
     totalTransactions: 0,
     totalVolume: 0,
     totalFees: 0,
     uniqueUsers: 0,
     isPaused: false,
+    isFree: true,
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -19,10 +20,8 @@ export default function AdminDashboard() {
   const OWNER_WALLET = "HXbcGYiYFPuq41oCL8wo232J6cA8v7XH2gYoHr1kBF9r";
 
   useEffect(() => {
-    // إذا كانت المحفظة متصلة وغير مصرح، لا نفعل شيئاً
-    // المستخدم يجب أن يضغط على زر "تأكيد الدخول" يدوياً
     setIsLoading(false);
-  }, [connected, publicKey]);
+  }, []);
 
   const handleConfirmLogin = () => {
     if (connected && publicKey && publicKey.toBase58() === OWNER_WALLET) {
@@ -32,7 +31,7 @@ export default function AdminDashboard() {
     }
   };
 
-  // 📊 جلب الإحصائيات (فقط عندما تكون الجلسة نشطة)
+  // 📊 جلب الإحصائيات
   useEffect(() => {
     if (!isSessionActive) return;
     
@@ -138,9 +137,11 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Platform Status */}
-        <div className="p-6 rounded-3xl bg-slate-900/60 border border-slate-800">
+        {/* Platform Status & Free Mode */}
+        <div className="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 space-y-4">
           <h2 className="text-lg font-bold text-white mb-4">Platform Controls</h2>
+          
+          {/* Platform Status */}
           <div className="flex items-center justify-between p-4 rounded-xl bg-slate-950/50 border border-slate-800">
             <div>
               <div className="text-sm font-bold text-white">Platform Status</div>
@@ -150,7 +151,11 @@ export default function AdminDashboard() {
             </div>
             <button
               onClick={async () => {
-                const res = await fetch("/api/admin/toggle", { method: "POST" });
+                const res = await fetch("/api/admin/toggle", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ action: "togglePause" }),
+                });
                 const data = await res.json();
                 if (data.success) {
                   setStats({ ...stats, isPaused: data.isPaused });
@@ -163,6 +168,36 @@ export default function AdminDashboard() {
               }`}
             >
               {stats.isPaused ? "Resume Platform" : "Pause Platform"}
+            </button>
+          </div>
+
+          {/* Free Mode */}
+          <div className="flex items-center justify-between p-4 rounded-xl bg-slate-950/50 border border-slate-800">
+            <div>
+              <div className="text-sm font-bold text-white">Fee Mode</div>
+              <div className="text-xs text-slate-400 mt-1">
+                {stats.isFree ? "🟢 Free - Users pay 0 platform fees" : "🟡 Paid - Platform fees are active"}
+              </div>
+            </div>
+            <button
+              onClick={async () => {
+                const res = await fetch("/api/admin/toggle", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ action: "toggleFree" }),
+                });
+                const data = await res.json();
+                if (data.success) {
+                  setStats({ ...stats, isFree: data.free });
+                }
+              }}
+              className={`px-6 py-2 rounded-xl font-bold text-sm transition-all ${
+                stats.isFree
+                  ? "bg-amber-500/20 border border-amber-500/40 text-amber-400 hover:bg-amber-500/30"
+                  : "bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/30"
+              }`}
+            >
+              {stats.isFree ? "Activate Fees" : "Make Free"}
             </button>
           </div>
         </div>
