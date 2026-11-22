@@ -103,7 +103,7 @@ export default function Header({
               <div className="fixed inset-0 z-[90] sm:hidden" onClick={() => setShowNetworkDetails(false)}></div>
               
               {/* Dropdown Panel */}
-              <div className="fixed top-20 left-1/2 -translate-x-1/2 w-[calc(100vw-2rem)] max-w-sm sm:absolute sm:top-full sm:left-auto sm:right-0 sm:translate-x-0 sm:mt-2 sm:w-96 bg-[#0B1120] border border-slate-700 rounded-2xl shadow-2xl z-[100] p-4 space-y-3 max-h-[80vh] overflow-y-auto text-sm">
+              <div className="fixed top-28 left-1/2 -translate-x-1/2 w-[calc(100vw-2rem)] max-w-sm sm:absolute sm:top-full sm:left-auto sm:right-0 sm:translate-x-0 sm:mt-2 sm:w-96 bg-[#0B1120] border border-slate-700 rounded-2xl shadow-2xl z-[100] p-4 space-y-3 max-h-[80vh] overflow-y-auto text-sm">
                 
                 {/* Network Status */}
                 <div className="pb-2 border-b border-slate-800">
