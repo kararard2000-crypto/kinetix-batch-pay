@@ -7,7 +7,7 @@ export async function GET() {
     const dataFile = process.env.DATA_FILE || ".data/store.json";
     const filePath = path.join(process.cwd(), dataFile);
 
-    let free = true; // القيمة الافتراضية: مجاني
+    let free = true; // الوضع الافتراضي: مجاني
     let paused = false;
 
     if (fs.existsSync(filePath)) {
@@ -16,7 +16,6 @@ export async function GET() {
       free = data.free !== undefined ? data.free : true;
       paused = data.isPaused || false;
     } else {
-      // إذا لم يكن الملف موجوداً، ننشئه بقيم افتراضية
       fs.mkdirSync(path.dirname(filePath), { recursive: true });
       fs.writeFileSync(filePath, JSON.stringify({ free: true, isPaused: false, records: [], users: [] }, null, 2));
     }
@@ -24,9 +23,9 @@ export async function GET() {
     return NextResponse.json({
       free,
       paused,
-      mode: "flat",
-      flatLamports: 10_000_000, // 0.01 SOL (لن يستخدم في وضع Free)
-      bps: 50, // 0.5%
+      mode: "bps", // 👈 الرسوم النسبية
+      bps: 50, // 👈 0.5% (50 basis points)
+      minFeeLamports: 5_000_000, // 👈 حد أدنى 0.005 SOL
       treasury: process.env.TREASURY_WALLET || "",
     });
   } catch (error: any) {
