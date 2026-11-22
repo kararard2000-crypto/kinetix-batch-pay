@@ -98,68 +98,74 @@ export default function Header({
           </button>
 
           {showNetworkDetails && (
-            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 sm:left-auto sm:right-0 sm:translate-x-0 w-80 sm:w-96 bg-[#0B1120] border border-slate-700 rounded-2xl shadow-2xl z-[100] p-4 space-y-3 max-h-[80vh] overflow-y-auto text-sm">
+            <>
+              {/* Overlay to close on mobile click outside */}
+              <div className="fixed inset-0 z-[90] sm:hidden" onClick={() => setShowNetworkDetails(false)}></div>
               
-              {/* Network Status */}
-              <div className="pb-2 border-b border-slate-800">
-                <h4 className="text-[10px] font-bold text-slate-400 uppercase mb-1">Network Status</h4>
-                <div className="flex justify-between text-xs text-slate-300">
-                  <span>Status:</span> <span className="font-bold" style={{ color: currentStyle.text }}>{netHealth}</span>
-                </div>
-              </div>
-
-              {/* Live Priority Fees */}
-              {feeStats && feeStats.sampleSize > 0 ? (
-                <div className="pb-2 border-b border-slate-800">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-[10px] font-bold text-slate-400 uppercase">Live Priority Fees</h4>
-                    <span className="text-[8px] text-emerald-400 font-mono animate-pulse">● LIVE</span>
-                  </div>
-                  
-                  <div className="bg-slate-950/50 rounded-lg p-2 space-y-1 text-[10px] font-mono">
-                    <div className="flex justify-between"><span className="text-slate-500">Min:</span><span className="text-slate-300">{feeStats.min.toLocaleString()} µL</span></div>
-                    <div className="flex justify-between"><span className="text-slate-500">P50:</span><span className="text-cyan-400">{feeStats.median.toLocaleString()} µL</span></div>
-                    <div className="flex justify-between"><span className="text-slate-500">P75:</span><span className="text-amber-400">{feeStats.p75.toLocaleString()} µL</span></div>
-                    <div className="flex justify-between"><span className="text-slate-500">P90:</span><span className="text-rose-400">{feeStats.p90.toLocaleString()} µL</span></div>
-                    <div className="flex justify-between border-t border-slate-800 pt-1 mt-1"><span className="text-slate-500">Max:</span><span className="text-slate-300">{feeStats.max.toLocaleString()} µL</span></div>
-                  </div>
-                  
-                  <div className="mt-2 flex justify-between text-[8px] text-slate-500">
-                    <span>Sample: {feeStats.sampleSize} tx</span>
-                    <span>Updated: {feeStats.lastUpdate}</span>
-                  </div>
-                </div>
-              ) : (
-                <div className="pb-2 border-b border-slate-800">
-                  <p className="text-[10px] text-amber-400 text-center">⚠️ No live data. Using fallback values.</p>
-                </div>
-              )}
-
-              {/* Fee Mode Selector */}
-              <div>
-                <h4 className="text-[10px] font-bold text-slate-400 uppercase mb-2">Your Fee Mode</h4>
-                <div className="grid grid-cols-3 gap-2 mb-3">
-                  {(["Eco", "Balanced", "Turbo"] as const).map((mode) => (
-                    <button key={mode} onClick={() => setAiFeeMode(mode)} className={`py-1.5 rounded-lg text-[10px] font-bold border transition-all ${aiFeeMode === mode ? "bg-amber-500 text-slate-950 border-amber-400 shadow-md" : "bg-slate-900 text-slate-300 border-slate-700 hover:bg-slate-800"}`}>
-                      {mode}
-                    </button>
-                  ))}
-                </div>
+              {/* Dropdown Panel */}
+              <div className="fixed top-20 left-1/2 -translate-x-1/2 w-[calc(100vw-2rem)] max-w-sm sm:absolute sm:top-full sm:left-auto sm:right-0 sm:translate-x-0 sm:mt-2 sm:w-96 bg-[#0B1120] border border-slate-700 rounded-2xl shadow-2xl z-[100] p-4 space-y-3 max-h-[80vh] overflow-y-auto text-sm">
                 
-                <div className="text-center bg-cyan-500/10 border border-cyan-500/30 rounded-lg py-2 flex flex-col items-center justify-center">
-                  <div className="text-[8px] text-slate-400 uppercase tracking-wider">Active Fee ({modeLabel})</div>
-                  <div className="text-base font-bold text-cyan-400 font-mono mt-0.5">
-                    {solPrice ? `~$${activeCost.usd}` : "Loading..."}
+                {/* Network Status */}
+                <div className="pb-2 border-b border-slate-800">
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase mb-1">Network Status</h4>
+                  <div className="flex justify-between text-xs text-slate-300">
+                    <span>Status:</span> <span className="font-bold" style={{ color: currentStyle.text }}>{netHealth}</span>
                   </div>
-                  <div className="text-[9px] text-cyan-500/80 font-mono">
-                    ≈ {activeCost.sol} SOL
+                </div>
+
+                {/* Live Priority Fees */}
+                {feeStats && feeStats.sampleSize > 0 ? (
+                  <div className="pb-2 border-b border-slate-800">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-[10px] font-bold text-slate-400 uppercase">Live Priority Fees</h4>
+                      <span className="text-[8px] text-emerald-400 font-mono animate-pulse">● LIVE</span>
+                    </div>
+                    
+                    <div className="bg-slate-950/50 rounded-lg p-2 space-y-1 text-[10px] font-mono">
+                      <div className="flex justify-between"><span className="text-slate-500">Min:</span><span className="text-slate-300">{feeStats.min.toLocaleString()} µL</span></div>
+                      <div className="flex justify-between"><span className="text-slate-500">P50:</span><span className="text-cyan-400">{feeStats.median.toLocaleString()} µL</span></div>
+                      <div className="flex justify-between"><span className="text-slate-500">P75:</span><span className="text-amber-400">{feeStats.p75.toLocaleString()} µL</span></div>
+                      <div className="flex justify-between"><span className="text-slate-500">P90:</span><span className="text-rose-400">{feeStats.p90.toLocaleString()} µL</span></div>
+                      <div className="flex justify-between border-t border-slate-800 pt-1 mt-1"><span className="text-slate-500">Max:</span><span className="text-slate-300">{feeStats.max.toLocaleString()} µL</span></div>
+                    </div>
+                    
+                    <div className="mt-2 flex justify-between text-[8px] text-slate-500">
+                      <span>Sample: {feeStats.sampleSize} tx</span>
+                      <span>Updated: {feeStats.lastUpdate}</span>
+                    </div>
                   </div>
-                  <div className="text-[7px] text-slate-500 font-mono border-t border-cyan-500/20 pt-1 mt-1 w-4/5">
-                    ({estimatedMicroLamports.toLocaleString()} µL)
+                ) : (
+                  <div className="pb-2 border-b border-slate-800">
+                    <p className="text-[10px] text-amber-400 text-center">⚠️ No live data. Using fallback values.</p>
+                  </div>
+                )}
+
+                {/* Fee Mode Selector */}
+                <div>
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase mb-2">Your Fee Mode</h4>
+                  <div className="grid grid-cols-3 gap-2 mb-3">
+                    {(["Eco", "Balanced", "Turbo"] as const).map((mode) => (
+                      <button key={mode} onClick={() => setAiFeeMode(mode)} className={`py-1.5 rounded-lg text-[10px] font-bold border transition-all ${aiFeeMode === mode ? "bg-amber-500 text-slate-950 border-amber-400 shadow-md" : "bg-slate-900 text-slate-300 border-slate-700 hover:bg-slate-800"}`}>
+                        {mode}
+                      </button>
+                    ))}
+                  </div>
+                  
+                  <div className="text-center bg-cyan-500/10 border border-cyan-500/30 rounded-lg py-2 flex flex-col items-center justify-center">
+                    <div className="text-[8px] text-slate-400 uppercase tracking-wider">Active Fee ({modeLabel})</div>
+                    <div className="text-base font-bold text-cyan-400 font-mono mt-0.5">
+                      {solPrice ? `~$${activeCost.usd}` : "Loading..."}
+                    </div>
+                    <div className="text-[9px] text-cyan-500/80 font-mono">
+                      ≈ {activeCost.sol} SOL
+                    </div>
+                    <div className="text-[7px] text-slate-500 font-mono border-t border-cyan-500/20 pt-1 mt-1 w-4/5">
+                      ({estimatedMicroLamports.toLocaleString()} µL)
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            </>
           )}
         </div>
 
