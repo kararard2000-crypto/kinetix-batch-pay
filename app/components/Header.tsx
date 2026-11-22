@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { Locale } from "@/lib/i18n";
+import { useRouter } from "next/navigation"; // 👈 أضفنا هذا
 
 interface FeeStats {
   min: number; max: number; avg: number; median: number;
@@ -24,6 +25,7 @@ export default function Header({
   t, netHealth, solPrice, locale, changeLocale,
   aiFeeMode, setAiFeeMode, estimatedMicroLamports, feeStats
 }: HeaderProps) {
+  const router = useRouter(); // 👈 أضفنا هذا
   const [mounted, setMounted] = useState(false);
   const [showNetworkDetails, setShowNetworkDetails] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
@@ -99,13 +101,10 @@ export default function Header({
 
           {showNetworkDetails && (
             <>
-              {/* Overlay to close on mobile click outside */}
               <div className="fixed inset-0 z-[90] sm:hidden" onClick={() => setShowNetworkDetails(false)}></div>
               
-              {/* Dropdown Panel */}
               <div className="fixed top-28 left-1/2 -translate-x-1/2 w-[calc(100vw-2rem)] max-w-sm sm:absolute sm:top-full sm:left-auto sm:right-0 sm:translate-x-0 sm:mt-2 sm:w-96 bg-[#0B1120] border border-slate-700 rounded-2xl shadow-2xl z-[100] p-4 space-y-3 max-h-[80vh] overflow-y-auto text-sm">
                 
-                {/* Network Status */}
                 <div className="pb-2 border-b border-slate-800">
                   <h4 className="text-[10px] font-bold text-slate-400 uppercase mb-1">Network Status</h4>
                   <div className="flex justify-between text-xs text-slate-300">
@@ -113,7 +112,6 @@ export default function Header({
                   </div>
                 </div>
 
-                {/* Live Priority Fees */}
                 {feeStats && feeStats.sampleSize > 0 ? (
                   <div className="pb-2 border-b border-slate-800">
                     <div className="flex items-center justify-between mb-2">
@@ -140,7 +138,6 @@ export default function Header({
                   </div>
                 )}
 
-                {/* Fee Mode Selector */}
                 <div>
                   <h4 className="text-[10px] font-bold text-slate-400 uppercase mb-2">Your Fee Mode</h4>
                   <div className="grid grid-cols-3 gap-2 mb-3">
@@ -169,12 +166,19 @@ export default function Header({
           )}
         </div>
 
-        {/* SOL Price */}
         {solPrice && (
           <div className="px-2 py-1.5 rounded-xl bg-slate-950/80 border border-slate-800 text-[10px] md:text-xs font-bold text-cyan-400">
             SOL: ${solPrice.toFixed(2)}
           </div>
         )}
+
+        {/* Docs Button 👈 أضفناه هنا */}
+        <button
+          onClick={() => router.push("/docs")}
+          className="bg-slate-950/80 border border-slate-800 text-slate-200 text-[10px] md:text-xs rounded-xl px-3 py-2 outline-none hover:border-purple-500 font-semibold cursor-pointer shadow-md"
+        >
+          Docs
+        </button>
 
         {/* Language Selector */}
         <div className="relative">
