@@ -4,11 +4,9 @@ import path from "path";
 
 export async function GET() {
   try {
-    // مسار ملف البيانات (من .env.local)
     const dataFile = process.env.DATA_FILE || ".data/store.json";
     const filePath = path.join(process.cwd(), dataFile);
 
-    // إذا لم يكن الملف موجوداً، نرجع أصفاراً
     if (!fs.existsSync(filePath)) {
       return NextResponse.json({
         success: true,
@@ -18,7 +16,9 @@ export async function GET() {
           totalFees: 0,
           uniqueUsers: 0,
           isPaused: false,
-          isFree: true, // 👈 أضفنا هذا
+          isFree: true,
+          bps: 50,
+          minFeeLamports: 5_000_000,
         },
       });
     }
@@ -26,7 +26,6 @@ export async function GET() {
     const rawData = fs.readFileSync(filePath, "utf-8");
     const data = JSON.parse(rawData);
 
-    // حساب الإحصائيات (بناءً على هيكل store.json)
     const records = data.records || data.transactions || [];
     const users = data.users || [];
 
@@ -43,7 +42,9 @@ export async function GET() {
         totalFees,
         uniqueUsers,
         isPaused: data.isPaused || false,
-        isFree: data.free !== undefined ? data.free : true, // 👈 أضفنا هذا
+        isFree: data.free !== undefined ? data.free : true,
+        bps: data.bps || 50,
+        minFeeLamports: data.minFeeLamports || 5_000_000,
       },
     });
   } catch (error: any) {

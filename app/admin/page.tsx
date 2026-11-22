@@ -13,10 +13,12 @@ export default function AdminDashboard() {
     uniqueUsers: 0,
     isPaused: false,
     isFree: true,
+    bps: 50,
+    minFeeLamports: 5_000_000,
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  // 👑 عنوان محفظة المالك
   const OWNER_WALLET = "HXbcGYiYFPuq41oCL8wo232J6cA8v7XH2gYoHr1kBF9r";
 
   useEffect(() => {
@@ -31,29 +33,48 @@ export default function AdminDashboard() {
     }
   };
 
-  // 📊 جلب الإحصائيات
+  const fetchStats = async () => {
+    try {
+      const res = await fetch("/api/admin/stats");
+      const data = await res.json();
+      if (data.success) {
+        setStats(data.stats);
+      }
+    } catch (err) {
+      console.error("Failed to load stats:", err);
+    }
+  };
+
   useEffect(() => {
     if (!isSessionActive) return;
-    
-    fetch("/api/admin/stats")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) {
-          setStats(data.stats);
-        }
-      })
-      .catch((err) => console.error("Failed to load stats:", err));
+    fetchStats();
   }, [isSessionActive]);
 
+  const handleAction = async (action: string, value?: number) => {
+    setIsUpdating(true);
+    try {
+      const res = await fetch("/api/admin/toggle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, value }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        await fetchStats(); // إعادة جلب الإحصائيات لتحديث الواجهة
+      } else {
+        alert(data.error || "Action failed");
+      }
+    } catch (err) {
+      alert("Network error");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-400">
-        Loading...
-      </div>
-    );
+    return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-400">Loading...</div>;
   }
 
-  // 🔒 صفحة تسجيل الدخول
   if (!isSessionActive) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
@@ -61,42 +82,33 @@ export default function AdminDashboard() {
           <div className="mb-6">
             <h1 className="text-2xl font-extrabold text-white">🔐 Owner Access Only</h1>
             <p className="text-sm text-slate-400 mt-2">
-              {connected 
-                ? "Please confirm your identity to access the dashboard." 
-                : "Please connect your owner wallet to continue."}
+              {connected ? "Please confirm your identity." : "Please connect your owner wallet."}
             </p>
           </div>
-          
           <div className="flex justify-center mb-4">
             <WalletMultiButton className="!bg-gradient-to-r !from-purple-600 !to-indigo-600 hover:!from-purple-500 hover:!to-indigo-500 !transition-all !duration-300 !rounded-xl !font-semibold !shadow-lg !shadow-purple-600/25" />
           </div>
-
           {connected && (
-             <div className="mt-4">
-               <div className="p-3 rounded-lg bg-slate-950/50 border border-slate-800 text-xs font-mono mb-3">
-                 Connected: {publicKey?.toBase58().slice(0, 6)}...{publicKey?.toBase58().slice(-4)}
-               </div>
-               
-               {publicKey?.toBase58() === OWNER_WALLET ? (
-                 <button 
-                   onClick={handleConfirmLogin}
-                   className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold hover:from-emerald-500 hover:to-teal-500 transition-all"
-                 >
-                   Confirm Admin Access
-                 </button>
-               ) : (
-                 <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs">
-                   This wallet does not have admin privileges.
-                 </div>
-               )}
-             </div>
+            <div className="mt-4">
+              <div className="p-3 rounded-lg bg-slate-950/50 border border-slate-800 text-xs font-mono mb-3">
+                Connected: {publicKey?.toBase58().slice(0, 6)}...{publicKey?.toBase58().slice(-4)}
+              </div>
+              {publicKey?.toBase58() === OWNER_WALLET ? (
+                <button onClick={handleConfirmLogin} className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold hover:from-emerald-500 hover:to-teal-500 transition-all">
+                  Confirm Admin Access
+                </button>
+              ) : (
+                <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs">
+                  This wallet does not have admin privileges.
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
     );
   }
 
-  // 📊 لوحة التحكم الرئيسية
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-slate-100 p-4 md:p-8 font-sans">
       <div className="max-w-6xl mx-auto space-y-8">
@@ -137,70 +149,97 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Platform Status & Free Mode */}
-        <div className="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 space-y-4">
-          <h2 className="text-lg font-bold text-white mb-4">Platform Controls</h2>
+        {/* Controls */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           
           {/* Platform Status */}
-          <div className="flex items-center justify-between p-4 rounded-xl bg-slate-950/50 border border-slate-800">
-            <div>
-              <div className="text-sm font-bold text-white">Platform Status</div>
-              <div className="text-xs text-slate-400 mt-1">
-                {stats.isPaused ? "🔴 Paused - Users cannot send batches" : "🟢 Active - Platform is live"}
+          <div className="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 space-y-4">
+            <h2 className="text-lg font-bold text-white">Platform Status</h2>
+            <div className="flex items-center justify-between p-4 rounded-xl bg-slate-950/50 border border-slate-800">
+              <div>
+                <div className="text-sm font-bold text-white">Current Status</div>
+                <div className="text-xs text-slate-400 mt-1">
+                  {stats.isPaused ? "🔴 Paused" : "🟢 Active"}
+                </div>
               </div>
+              <button
+                onClick={() => handleAction("togglePause")}
+                disabled={isUpdating}
+                className={`px-6 py-2 rounded-xl font-bold text-sm transition-all ${
+                  stats.isPaused
+                    ? "bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/30"
+                    : "bg-rose-500/20 border border-rose-500/40 text-rose-400 hover:bg-rose-500/30"
+                } disabled:opacity-50`}
+              >
+                {isUpdating ? "..." : (stats.isPaused ? "Resume" : "Pause")}
+              </button>
             </div>
-            <button
-              onClick={async () => {
-                const res = await fetch("/api/admin/toggle", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ action: "togglePause" }),
-                });
-                const data = await res.json();
-                if (data.success) {
-                  setStats({ ...stats, isPaused: data.isPaused });
-                }
-              }}
-              className={`px-6 py-2 rounded-xl font-bold text-sm transition-all ${
-                stats.isPaused
-                  ? "bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/30"
-                  : "bg-rose-500/20 border border-rose-500/40 text-rose-400 hover:bg-rose-500/30"
-              }`}
-            >
-              {stats.isPaused ? "Resume Platform" : "Pause Platform"}
-            </button>
           </div>
 
-          {/* Free Mode */}
-          <div className="flex items-center justify-between p-4 rounded-xl bg-slate-950/50 border border-slate-800">
-            <div>
-              <div className="text-sm font-bold text-white">Fee Mode</div>
-              <div className="text-xs text-slate-400 mt-1">
-                {stats.isFree ? "🟢 Free - Users pay 0 platform fees" : "🟡 Paid - Platform fees are active"}
+          {/* Fee Mode */}
+          <div className="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 space-y-4">
+            <h2 className="text-lg font-bold text-white">Fee Mode</h2>
+            <div className="flex items-center justify-between p-4 rounded-xl bg-slate-950/50 border border-slate-800">
+              <div>
+                <div className="text-sm font-bold text-white">Current Mode</div>
+                <div className="text-xs text-slate-400 mt-1">
+                  {stats.isFree ? "🟢 Free (0%)" : `🟡 Paid (${stats.bps / 100}%)`}
+                </div>
               </div>
+              <button
+                onClick={() => handleAction("toggleFree")}
+                disabled={isUpdating}
+                className={`px-6 py-2 rounded-xl font-bold text-sm transition-all ${
+                  stats.isFree
+                    ? "bg-amber-500/20 border border-amber-500/40 text-amber-400 hover:bg-amber-500/30"
+                    : "bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/30"
+                } disabled:opacity-50`}
+              >
+                {isUpdating ? "..." : (stats.isFree ? "Activate Fees" : "Make Free")}
+              </button>
             </div>
-            <button
-              onClick={async () => {
-                const res = await fetch("/api/admin/toggle", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ action: "toggleFree" }),
-                });
-                const data = await res.json();
-                if (data.success) {
-                  setStats({ ...stats, isFree: data.free });
-                }
-              }}
-              className={`px-6 py-2 rounded-xl font-bold text-sm transition-all ${
-                stats.isFree
-                  ? "bg-amber-500/20 border border-amber-500/40 text-amber-400 hover:bg-amber-500/30"
-                  : "bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/30"
-              }`}
-            >
-              {stats.isFree ? "Activate Fees" : "Make Free"}
-            </button>
           </div>
         </div>
+
+        {/* Fee Settings (BPS & Min Fee) */}
+        <div className="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 space-y-4">
+          <h2 className="text-lg font-bold text-white">Fee Configuration</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-4 rounded-xl bg-slate-950/50 border border-slate-800">
+              <label className="text-xs text-slate-400 font-bold block mb-2">Fee Percentage (BPS)</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  defaultValue={stats.bps}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value);
+                    if (!isNaN(val)) handleAction("setBps", val);
+                  }}
+                  className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm"
+                  placeholder="50"
+                />
+                <span className="text-xs text-slate-500">= {(stats.bps / 100).toFixed(2)}%</span>
+              </div>
+            </div>
+            <div className="p-4 rounded-xl bg-slate-950/50 border border-slate-800">
+              <label className="text-xs text-slate-400 font-bold block mb-2">Min Fee (Lamports)</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  defaultValue={stats.minFeeLamports}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value);
+                    if (!isNaN(val)) handleAction("setMinFee", val);
+                  }}
+                  className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm"
+                  placeholder="5000000"
+                />
+                <span className="text-xs text-slate-500">= {(stats.minFeeLamports / 1e9).toFixed(6)} SOL</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   );
