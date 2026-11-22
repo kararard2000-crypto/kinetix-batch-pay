@@ -18,6 +18,7 @@ export async function GET() {
           totalFees: 0,
           uniqueUsers: 0,
           isPaused: false,
+          isFree: true, // 👈 أضفنا هذا
         },
       });
     }
@@ -26,7 +27,6 @@ export async function GET() {
     const data = JSON.parse(rawData);
 
     // حساب الإحصائيات (بناءً على هيكل store.json)
-    // ملاحظة: هذا الهيكل قد يحتاج لتعديل حسب ما يخزنه API record
     const records = data.records || data.transactions || [];
     const users = data.users || [];
 
@@ -43,6 +43,7 @@ export async function GET() {
         totalFees,
         uniqueUsers,
         isPaused: data.isPaused || false,
+        isFree: data.free !== undefined ? data.free : true, // 👈 أضفنا هذا
       },
     });
   } catch (error: any) {
