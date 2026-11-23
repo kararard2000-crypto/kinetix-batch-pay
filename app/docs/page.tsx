@@ -1,6 +1,5 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl"; // ملاحظة: لا نستخدم next-intl، بل i18n.ts
 
 // سنستخدم t من خلال prop أو من i18n مباشرة
 export default function DocsPage() {
