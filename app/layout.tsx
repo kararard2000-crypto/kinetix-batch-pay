@@ -14,7 +14,7 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ar" dir="rtl" className="dark">
+    <html lang="en" dir="ltr" className="dark"> {/* 👈 غيرنا هنا */}
       <body className={`${sora.className} bg-slate-950 text-slate-100 antialiased selection:bg-purple-500 selection:text-white min-h-screen`}>
         <Providers>
           {children}
