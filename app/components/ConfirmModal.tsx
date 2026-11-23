@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -9,12 +9,23 @@ interface ConfirmModalProps {
 }
 
 export default function ConfirmModal({ isOpen, onClose, onConfirm, plan, sol }: ConfirmModalProps) {
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+
   if (!isOpen || !plan) return null;
 
-  // استخراج قائمة العناوين للعرض المختصر
   const addresses: string[] = (plan.addresses || []).slice(0, 8);
   const totalRecipients = plan.n || 0;
   const hiddenCount = Math.max(0, totalRecipients - addresses.length);
+
+  const copyAddress = async (addr: string, index: number) => {
+    try {
+      await navigator.clipboard.writeText(addr);
+      setCopiedIndex(index);
+      setTimeout(() => setCopiedIndex(null), 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-[200] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
@@ -50,7 +61,7 @@ export default function ConfirmModal({ isOpen, onClose, onConfirm, plan, sol }: 
             </div>
           </div>
 
-          {/* ⚠️ عرض العناوين المختصرة (جديد) */}
+          {/* عرض العناوين المختصرة مع زر النسخ */}
           {addresses.length > 0 && (
             <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/20 space-y-2">
               <p className="text-xs font-bold text-amber-300 uppercase mb-2">
@@ -64,7 +75,14 @@ export default function ConfirmModal({ isOpen, onClose, onConfirm, plan, sol }: 
                   return (
                     <div key={i} className="flex justify-between items-center gap-2 py-1 border-b border-amber-500/10 last:border-0">
                       <span className="text-amber-200/60">#{i + 1}</span>
-                      <span className="text-amber-100 font-bold">{short}</span>
+                      <span className="text-amber-100 font-bold flex-1 text-right">{short}</span>
+                      <button
+                        onClick={() => copyAddress(addr, i)}
+                        className="text-[9px] px-2 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 transition-all"
+                        title="Copy full address"
+                      >
+                        {copiedIndex === i ? "✓" : "Copy"}
+                      </button>
                     </div>
                   );
                 })}
