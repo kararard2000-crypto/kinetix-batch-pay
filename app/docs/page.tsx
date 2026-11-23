@@ -1,10 +1,10 @@
 "use client";
-import { useWallet } from "@solana/wallet-adapter-react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl"; // ملاحظة: لا نستخدم next-intl، بل i18n.ts
 
+// سنستخدم t من خلال prop أو من i18n مباشرة
 export default function DocsPage() {
   const router = useRouter();
-  const { connected } = useWallet();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-slate-100 p-4 md:p-8 font-sans">
@@ -95,10 +95,24 @@ export default function DocsPage() {
           {/* Section 6: Contact */}
           <section className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 text-center">
             <h2 className="text-xl font-bold text-white mb-3">📞 Need Help?</h2>
-            <p className="text-sm text-slate-300">Contact us on Twitter or join our Discord community.</p>
+            <p className="text-sm text-slate-300">Join our Telegram community for support and updates.</p>
             <div className="flex justify-center gap-4 mt-4">
-              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="px-4 py-2 rounded-xl bg-slate-800 text-sm font-bold text-white hover:bg-slate-700">Twitter</a>
-              <a href="https://discord.com" target="_blank" rel="noopener noreferrer" className="px-4 py-2 rounded-xl bg-slate-800 text-sm font-bold text-white hover:bg-slate-700">Discord</a>
+              <a 
+                href="https://t.me/+TbozRkWWmfE4YTEy" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="px-6 py-2 rounded-xl bg-[#229ED9] text-sm font-bold text-white hover:bg-[#1a8bc4] transition-all"
+              >
+                Telegram
+              </a>
+              <a 
+                href="https://x.com/KinetixKNTX" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="px-6 py-2 rounded-xl bg-slate-800 text-sm font-bold text-white hover:bg-slate-700 transition-all"
+              >
+                X (Twitter)
+              </a>
             </div>
           </section>
 
