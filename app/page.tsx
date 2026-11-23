@@ -365,7 +365,17 @@ export default function Home() {
           >
             <AiFeePanel isOpen={showAiFeePanel} onClose={() => setShowAiFeePanel(false)} aiFeeMode={aiFeeMode} setAiFeeMode={setAiFeeMode} addToast={addToast} estimatedMicroLamports={estimatedMicroLamports} feeStats={feeStats} solPrice={solPrice} t={t} />
             <WebhookPanel isOpen={showWebhookPanel} telegramToken={telegramToken} setTelegramToken={setTelegramToken} telegramChatId={telegramChatId} setTelegramChatId={setTelegramChatId} discordWebhookUrl={discordWebhookUrl} setDiscordWebhookUrl={setDiscordWebhookUrl} saveWebhookSettings={saveWebhookSettings} />
-            <SchedulePanel isOpen={showSchedulePanel} scheduleTitleInput={scheduleTitleInput} setScheduleTitleInput={setScheduleTitleInput} scheduleIntervalInput={scheduleIntervalInput} setScheduleIntervalInput={setScheduleIntervalInput} saveScheduledPayroll={saveScheduledPayroll} />
+            <SchedulePanel 
+  isOpen={showSchedulePanel} 
+  scheduleTitleInput={scheduleTitleInput} 
+  setScheduleTitleInput={setScheduleTitleInput} 
+  scheduleIntervalInput={scheduleIntervalInput} 
+  setScheduleIntervalInput={setScheduleIntervalInput} 
+  saveScheduledPayroll={saveScheduledPayroll} 
+  scheduledPayrolls={scheduledPayrolls} 
+  toggleSchedule={toggleSchedule} 
+  deleteSchedule={deleteSchedule} 
+/>
             <MultiSigPanel isOpen={showMultisigPanel} multisigVault={multisigVault} setMultisigVault={setMultisigVault} addToast={addToast} setShowMultisigPanel={setShowMultisigPanel} />
             <AddressBookModal isOpen={showAddressBook} groupNameInput={groupNameInput} setGroupNameInput={setGroupNameInput} saveCurrentGroup={saveCurrentGroup} addressGroups={addressGroups} loadGroupToRows={loadGroupToRows} deleteGroup={deleteGroup} addToast={addToast} setShowAddressBook={setShowAddressBook} />
           </BatchInputSection>

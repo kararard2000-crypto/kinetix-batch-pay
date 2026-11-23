@@ -7,6 +7,9 @@ interface SchedulePanelProps {
   scheduleIntervalInput: "weekly" | "monthly";
   setScheduleIntervalInput: (val: "weekly" | "monthly") => void;
   saveScheduledPayroll: () => void;
+  scheduledPayrolls: any[]; // 👈 أضفنا هذا
+  toggleSchedule: (id: string) => void; // 👈 أضفنا هذا
+  deleteSchedule: (id: string) => void; // 👈 أضفنا هذا
 }
 
 export default function SchedulePanel({
@@ -15,7 +18,10 @@ export default function SchedulePanel({
   setScheduleTitleInput,
   scheduleIntervalInput,
   setScheduleIntervalInput,
-  saveScheduledPayroll
+  saveScheduledPayroll,
+  scheduledPayrolls,
+  toggleSchedule,
+  deleteSchedule,
 }: SchedulePanelProps) {
   if (!isOpen) return null;
 
@@ -26,6 +32,7 @@ export default function SchedulePanel({
         <span className="text-[10px] text-slate-400">Automated Enterprise Cycles</span>
       </div>
 
+      {/* إدخال الجدولة */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <input
           type="text"
@@ -51,6 +58,51 @@ export default function SchedulePanel({
           </button>
         </div>
       </div>
+
+      {/* قائمة الجدولة المحفوظة */}
+      {scheduledPayrolls.length > 0 && (
+        <div className="mt-3 space-y-2">
+          <p className="text-[10px] font-bold text-slate-400 uppercase">Saved Schedules</p>
+          <div className="space-y-1 max-h-40 overflow-y-auto">
+            {scheduledPayrolls.map((schedule) => (
+              <div
+                key={schedule.id}
+                className="flex items-center justify-between p-2 rounded-xl bg-slate-900 border border-slate-800 text-xs"
+              >
+                <div className="flex-1">
+                  <div className="font-bold text-white">{schedule.title}</div>
+                  <div className="text-[10px] text-slate-400">
+                    {schedule.interval === "weekly" ? "Weekly" : "Monthly"} • Next: {schedule.nextRun}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 ml-2">
+                  <span
+                    className={`text-[9px] px-2 py-0.5 rounded-full ${
+                      schedule.active
+                        ? "bg-emerald-500/20 text-emerald-400"
+                        : "bg-rose-500/20 text-rose-400"
+                    }`}
+                  >
+                    {schedule.active ? "Active" : "Paused"}
+                  </span>
+                  <button
+                    onClick={() => toggleSchedule(schedule.id)}
+                    className="text-[10px] text-cyan-400 hover:text-cyan-300"
+                  >
+                    {schedule.active ? "Pause" : "Resume"}
+                  </button>
+                  <button
+                    onClick={() => deleteSchedule(schedule.id)}
+                    className="text-[10px] text-rose-400 hover:text-rose-300"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
