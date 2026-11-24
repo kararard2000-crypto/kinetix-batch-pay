@@ -1,28 +1,46 @@
-# Kinetix Batch Pay ($KNTX)
+# Kinetix Batch Pay
 
-Non-custodial bulk SOL / SPL payments on Solana. Next.js 14 + TypeScript + Tailwind + web3.js + spl-token.
+![Kinetix Logo](public/logo.png)
 
-## Setup
-```bash
-npm install
-cp .env.example .env.local   # fill OWNER_WALLET, TREASURY_WALLET, SESSION_SECRET, RPC URLs
-npm run dev                  # http://localhost:3000  (admin: /admin)
-```
-Test on devnet first (`NEXT_PUBLIC_CLUSTER=devnet` + a devnet RPC).
+**Decentralized, Non-Custodial Bulk Payments on Solana**
 
-## Deploy
-Vercel: import the repo, add the env vars, deploy. Netlify: use the Next.js runtime plugin.
-Replace the JSON file store in `lib/store.ts` with Redis/Postgres (Upstash, Vercel KV, Supabase): serverless disks are ephemeral.
+Kinetix is a powerful, user-friendly platform for sending bulk payments on the Solana blockchain. Whether you are paying salaries, airdropping tokens, or distributing profits, Kinetix allows you to send to hundreds of recipients in a single, efficient batch.
 
-## How it works
-- Parse CSV/JSON/manual rows, validate base58 addresses, reject duplicates, convert amounts with BigInt (no floats).
-- Pack recipients into as few v0 transactions as fit in 1232 bytes; simulate each, set the compute limit from the simulation (+15%), add a p75 priority fee.
-- The wallet signs everything client-side (`signAllTransactions`). The server never sees keys.
-- Rebroadcast until confirmed or the blockhash expires; Pending / Confirmed / Finalized / Failed with Solscan links. Failed sub-batches can be retried; a status check prevents paying twice.
-- Admin: sign a nonce message with `OWNER_WALLET` -> 30-minute httpOnly cookie. Fee, treasury, free mode and pause live in the store. Analytics are derived from on-chain data.
+## 🚀 Live Demo
 
-## Known limits (read before mainnet)
-- No custom on-chain program yet: fee collection is enforced by the UI, so a modified client could skip the fee. Enforcing fees on-chain needs an Anchor program.
-- Pause is enforced by the UI and config API only, for the same reason.
-- Ledger can't `signMessage`, so use a software wallet for admin sign-in (or add a memo-transaction login).
-- Unaudited and not compiled in the authoring sandbox (no network): run `npm run build`, then test on devnet.
+Experience Kinetix live: [kinetix-batch-pay.vercel.app](https://kinetix-batch-pay.vercel.app)
+
+## ✨ Features
+
+- **Bulk Transfers:** Send SOL or SPL Tokens to multiple recipients in one batch.
+- **Non-Custodial:** We never hold your funds. You sign every transaction directly from your wallet.
+- **Real-time Priority Fees:** Dynamic fee calculation (Eco/Balanced/Turbo) based on live network data.
+- **Address Validation:** Real-time validation to prevent sending to invalid or duplicate addresses.
+- **Multi-Language Support:** 9 languages including Arabic, English, Chinese, Russian, Spanish, Korean, Japanese, Turkish, and Vietnamese.
+- **Responsive Design:** Fully optimized for desktop and mobile.
+- **Address Book:** Save your frequent recipients for quick access.
+- **Batch History:** Keep track of your recent batches locally.
+- **Scheduled Payrolls:** Create recurring payment schedules (local).
+
+## 🛠️ Tech Stack
+
+- **Framework:** Next.js 14 (App Router)
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS
+- **Blockchain:** Solana Web3.js
+- **Wallet Integration:** Solana Wallet Adapter
+- **Deployment:** Vercel
+- **RPC Provider:** Helius
+
+## 🚦 Getting Started
+
+### Prerequisites
+
+- Node.js 18+ installed
+- A Solana wallet (Phantom, Solflare, etc.)
+
+### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/kararard2000-crypto/kinetix-batch-pay.git
