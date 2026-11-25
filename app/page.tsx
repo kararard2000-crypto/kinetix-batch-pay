@@ -270,6 +270,23 @@ export default function Home() {
   };
   const clearHistory = () => { setHistory([]); localStorage.removeItem("kntx_batch_history"); addToast("Batch history cleared.", "info"); };
 
+  // 👈 دالة تصدير سجل معين كـ CSV
+  const exportHistoryItem = (item: HistoryItem) => {
+    let csv = "TransactionIndex,Signature,ExplorerLink\n";
+    item.signatures.forEach((sig, i) => {
+      csv += `${i + 1},${sig},${solscan(sig)}\n`;
+    });
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `kinetix-history-${item.id}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    addToast("History item exported successfully!", "success");
+  };
+
   async function preview() {
     if (!publicKey) { addToast(t.errWalletConnect, "error"); return setMsg(t.errWalletConnect); }
     setBusy(true); setMsg(""); setPlan(null); setJobs([]);
@@ -366,16 +383,16 @@ export default function Home() {
             <AiFeePanel isOpen={showAiFeePanel} onClose={() => setShowAiFeePanel(false)} aiFeeMode={aiFeeMode} setAiFeeMode={setAiFeeMode} addToast={addToast} estimatedMicroLamports={estimatedMicroLamports} feeStats={feeStats} solPrice={solPrice} t={t} />
             <WebhookPanel isOpen={showWebhookPanel} telegramToken={telegramToken} setTelegramToken={setTelegramToken} telegramChatId={telegramChatId} setTelegramChatId={setTelegramChatId} discordWebhookUrl={discordWebhookUrl} setDiscordWebhookUrl={setDiscordWebhookUrl} saveWebhookSettings={saveWebhookSettings} />
             <SchedulePanel 
-  isOpen={showSchedulePanel} 
-  scheduleTitleInput={scheduleTitleInput} 
-  setScheduleTitleInput={setScheduleTitleInput} 
-  scheduleIntervalInput={scheduleIntervalInput} 
-  setScheduleIntervalInput={setScheduleIntervalInput} 
-  saveScheduledPayroll={saveScheduledPayroll} 
-  scheduledPayrolls={scheduledPayrolls} 
-  toggleSchedule={toggleSchedule} 
-  deleteSchedule={deleteSchedule} 
-/>
+              isOpen={showSchedulePanel} 
+              scheduleTitleInput={scheduleTitleInput} 
+              setScheduleTitleInput={setScheduleTitleInput} 
+              scheduleIntervalInput={scheduleIntervalInput} 
+              setScheduleIntervalInput={setScheduleIntervalInput} 
+              saveScheduledPayroll={saveScheduledPayroll} 
+              scheduledPayrolls={scheduledPayrolls} 
+              toggleSchedule={toggleSchedule} 
+              deleteSchedule={deleteSchedule} 
+            />
             <MultiSigPanel isOpen={showMultisigPanel} multisigVault={multisigVault} setMultisigVault={setMultisigVault} addToast={addToast} setShowMultisigPanel={setShowMultisigPanel} />
             <AddressBookModal isOpen={showAddressBook} groupNameInput={groupNameInput} setGroupNameInput={setGroupNameInput} saveCurrentGroup={saveCurrentGroup} addressGroups={addressGroups} loadGroupToRows={loadGroupToRows} deleteGroup={deleteGroup} addToast={addToast} setShowAddressBook={setShowAddressBook} />
           </BatchInputSection>
@@ -392,8 +409,19 @@ export default function Home() {
                 <div key={item.id} className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-2 text-xs">
                   <div className="flex justify-between text-slate-400"><span>{item.date}</span><span className="font-bold text-purple-300">{item.count} Recipients</span></div>
                   <div className="text-slate-500 font-mono truncate">{item.signatures.length} TX Signatures saved</div>
-                  <div className="pt-2 border-t border-slate-800 flex items-center gap-2">
-                    {item.signatures[0] && (<a href={solscan(item.signatures[0])} target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline font-semibold">View First Tx ↗</a>)}
+                  <div className="pt-2 border-t border-slate-800 flex items-center justify-between gap-2">
+                    {item.signatures[0] && (
+                      <a href={solscan(item.signatures[0])} target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline font-semibold">
+                        View First Tx ↗
+                      </a>
+                    )}
+                    {/* 👈 زر التصدير الجديد */}
+                    <button
+                      onClick={() => exportHistoryItem(item)}
+                      className="text-[10px] px-2 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30 transition-all"
+                    >
+                      Export CSV
+                    </button>
                   </div>
                 </div>
               ))}
