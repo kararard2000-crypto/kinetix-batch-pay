@@ -2,7 +2,11 @@
   "name": "kinetix-batch-pay",
   "version": "0.1.0",
   "private": true,
-  "scripts": { "dev": "next dev", "build": "next build", "start": "next start" },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
   "dependencies": {
     "@solana/spl-token": "^0.4.9",
     "@solana/wallet-adapter-base": "^0.9.23",
@@ -14,6 +18,7 @@
     "next": "^14.2.15",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "recharts": "^3.11.1",
     "tweetnacl": "^1.0.3"
   },
   "devDependencies": {

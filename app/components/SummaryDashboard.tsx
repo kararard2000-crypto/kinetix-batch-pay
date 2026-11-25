@@ -1,4 +1,5 @@
 import React from "react";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 
 interface SummaryDashboardProps {
   t: any;
@@ -11,7 +12,18 @@ interface SummaryDashboardProps {
   solscan: (sig: string) => string;
 }
 
+const COLORS = ["#8b5cf6", "#06b6d4", "#f59e0b", "#10b981", "#ec4899", "#6366f1"];
+
 export default function SummaryDashboard({ t, plan, feeLabel, sol, tousd, jobs, tone, solscan }: SummaryDashboardProps) {
+  // إعداد بيانات الرسم البياني (توزيع الحصص)
+  const pieData = React.useMemo(() => {
+    if (!plan || !plan.chunks) return [];
+    return plan.chunks.slice(0, 5).map((chunk: any, i: number) => ({
+      name: `Tx #${i + 1}`,
+      value: Number(chunk.amount || 0) / 1e9 || 1,
+    }));
+  }, [plan]);
+
   return (
     <section className="md:col-span-2 p-6 md:p-8 rounded-3xl bg-slate-900/60 border border-purple-500/20 backdrop-blur-xl shadow-2xl shadow-purple-900/10">
       <div className="space-y-4">
@@ -31,6 +43,35 @@ export default function SummaryDashboard({ t, plan, feeLabel, sol, tousd, jobs, 
           </div>
         ) : (
           <div className="space-y-4">
+            {/* Pie Chart */}
+            {pieData.length > 0 && (
+              <div className="h-48 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={40}
+                      outerRadius={70}
+                      fill="#8884d8"
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {pieData.map((entry: any, index: number) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{ backgroundColor: "#0f172a", border: "1px solid #334155", borderRadius: "8px" }}
+                      itemStyle={{ color: "#e2e8f0" }}
+                      formatter={(value: any) => [`${Number(value).toFixed(4)} SOL`, "Amount"]}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+
             <dl className="space-y-3 text-sm">
               <div className="flex justify-between items-center py-2 border-b border-slate-800/60">
                 <dt className="text-slate-400">{t.recipients}</dt>
