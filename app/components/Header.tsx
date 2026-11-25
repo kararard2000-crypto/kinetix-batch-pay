@@ -172,14 +172,21 @@ export default function Header({
           </div>
         )}
 
-        {/* Docs Button 👈 أضفناه هنا */}
-        <button
-          onClick={() => router.push("/docs")}
-          className="bg-slate-950/80 border border-slate-800 text-slate-200 text-[10px] md:text-xs rounded-xl px-3 py-2 outline-none hover:border-purple-500 font-semibold cursor-pointer shadow-md"
-        >
-          Docs
-        </button>
+        {/* Docs Button */}
+<button
+  onClick={() => router.push("/docs")}
+  className="bg-slate-950/80 border border-slate-800 text-slate-200 text-[10px] md:text-xs rounded-xl px-3 py-2 outline-none hover:border-purple-500 font-semibold cursor-pointer shadow-md"
+>
+  Docs
+</button>
 
+{/* About Button 👈 أضفناه هنا */}
+<button
+  onClick={() => router.push("/about")}
+  className="bg-slate-950/80 border border-slate-800 text-slate-200 text-[10px] md:text-xs rounded-xl px-3 py-2 outline-none hover:border-purple-500 font-semibold cursor-pointer shadow-md"
+>
+  About
+</button>
         {/* Language Selector */}
         <div className="relative">
           <button 
