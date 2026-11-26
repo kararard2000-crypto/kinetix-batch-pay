@@ -1,5 +1,5 @@
 "use client";
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { ConnectionProvider, WalletProvider } from "@solana/wallet-adapter-react";
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
 import { 
@@ -10,11 +10,29 @@ import {
 import "@solana/wallet-adapter-react-ui/styles.css";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
-  const endpoint = useMemo(() => {
-    return process.env.NEXT_PUBLIC_RPC_URL || "https://api.mainnet-beta.solana.com";
+  const [network, setNetwork] = useState<"mainnet" | "devnet">("mainnet");
+
+  // قراءة الشبكة المختارة من localStorage عند التحميل، والاستماع لتغييرها
+  useEffect(() => {
+    const saved = localStorage.getItem("kntx_network") as "mainnet" | "devnet";
+    if (saved === "devnet" || saved === "mainnet") setNetwork(saved);
+    
+    // مستمع لحدث تغيير الشبكة من Header
+    const handleNetworkChange = (e: Event) => {
+      const customEvent = e as CustomEvent<"mainnet" | "devnet">;
+      setNetwork(customEvent.detail);
+    };
+    window.addEventListener("kntx-network-change", handleNetworkChange);
+    return () => window.removeEventListener("kntx-network-change", handleNetworkChange);
   }, []);
 
-  // المحافظ الحديثة (Backpack, Glow, Trust) تُكتشف تلقائياً عبر Wallet Standard
+  const endpoint = useMemo(() => {
+    if (network === "devnet") {
+      return "https://api.devnet.solana.com";
+    }
+    return process.env.NEXT_PUBLIC_RPC_URL || "https://api.mainnet-beta.solana.com";
+  }, [network]);
+
   const wallets = useMemo(() => [
     new PhantomWalletAdapter(), 
     new SolflareWalletAdapter(), 
@@ -22,7 +40,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   ], []);
 
   return (
-    <ConnectionProvider endpoint={endpoint}>
+    <ConnectionProvider endpoint={endpoint} key={network}>
       <WalletProvider wallets={wallets} autoConnect>
         <WalletModalProvider>{children}</WalletModalProvider>
       </WalletProvider>

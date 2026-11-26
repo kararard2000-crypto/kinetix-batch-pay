@@ -21,8 +21,15 @@ type SavedGroup = { id: string; name: string; content: string };
 type ScheduledPayroll = { id: string; title: string; interval: "weekly" | "monthly"; nextRun: string; content: string; active: boolean };
 type RecipientRow = { id: string; address: string; amount: string };
 
-const CL = process.env.NEXT_PUBLIC_CLUSTER === "devnet" ? "?cluster=devnet" : "";
-const solscan = (s: string) => `https://solscan.io/tx/${s}${CL}`;
+const getClusterParam = () => {
+  if (typeof window === "undefined") return "";
+  const net = localStorage.getItem("kntx_network");
+  return net === "devnet" ? "?cluster=devnet" : "";
+};
+const solscan = (s: string) => {
+  const cl = typeof window !== "undefined" && localStorage.getItem("kntx_network") === "devnet" ? "?cluster=devnet" : "";
+  return `https://solscan.io/tx/${s}${cl}`;
+};
 const sol = (l: number | bigint) => (Number(l) / 1e9).toFixed(6);
 
 const tone: Record<string, string> = {
