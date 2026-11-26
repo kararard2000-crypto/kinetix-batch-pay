@@ -97,7 +97,7 @@ export default function BatchInputSection({
       dir={t.dir}
     >
       <div className="space-y-4">
-        {/* Header + Feature buttons: stacked on mobile, 2-col grid for buttons */}
+        {/* Header + Feature buttons */}
         <div className="flex flex-col gap-3">
           <h2 className="text-lg font-bold text-slate-200 flex items-center gap-2">
             <span className="inline-block w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
@@ -169,7 +169,7 @@ export default function BatchInputSection({
 
                 return (
                   <div key={row.id} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-2 rounded-2xl bg-slate-950/80 border border-slate-800">
-                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <div className="flex items-center gap-2 w-full sm:flex-1">
                       <span className="text-xs font-bold text-slate-500 w-6 text-center shrink-0">#{idx + 1}</span>
                       <input 
                         type="text" 
@@ -231,6 +231,11 @@ export default function BatchInputSection({
             </span>
           </div>
         )}
+
+        {/* تحذير دائم تحت أزرار الميزات */}
+        <p className="text-[10px] text-slate-500 text-center italic">
+          ⚠️ Note: Scheduled payrolls (Payrolls) require an active browser session. They will not run automatically if the tab is closed.
+        </p>
 
         <div className="space-y-4 pt-2">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
