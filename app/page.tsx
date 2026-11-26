@@ -398,24 +398,38 @@ export default function Home() {
           </BatchInputSection>
           <SummaryDashboard t={t} plan={plan} feeLabel={feeLabel} sol={sol} tousd={tousd} jobs={jobs} tone={tone} solscan={solscan} />
         </div>
-        {history.length > 0 && (
-          <section className="p-6 md:p-8 rounded-3xl bg-slate-900/60 border border-purple-500/20 backdrop-blur-xl shadow-xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h2 className="text-lg font-bold text-slate-200 flex items-center gap-2"><span>📂 Recent Batch History (Local)</span></h2>
-              <button onClick={clearHistory} className="text-xs text-rose-400 hover:text-rose-300 font-semibold underline transition-colors">Clear History</button>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        
+        {/* بداية قسم السجل (History) */}
+        <section className="p-4 sm:p-6 md:p-8 rounded-3xl bg-slate-900/60 border border-purple-500/20 backdrop-blur-xl shadow-xl space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+            <h2 className="text-base sm:text-lg font-bold text-slate-200 flex items-center gap-2">
+              <span>📂 Recent Batch History (Local)</span>
+            </h2>
+            {history.length > 0 && (
+              <button onClick={clearHistory} className="text-xs text-rose-400 hover:text-rose-300 font-semibold underline transition-colors w-full sm:w-auto text-right sm:text-left">
+                Clear History
+              </button>
+            )}
+          </div>
+          {history.length === 0 ? (
+            <p className="text-xs text-slate-500 italic text-center py-6">
+              No history yet. Run a batch to see it here.
+            </p>
+          ) : (
+            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               {history.map((item) => (
                 <div key={item.id} className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-2 text-xs">
-                  <div className="flex justify-between text-slate-400"><span>{item.date}</span><span className="font-bold text-purple-300">{item.count} Recipients</span></div>
+                  <div className="flex justify-between gap-2 text-slate-400 flex-wrap">
+                    <span>{item.date}</span>
+                    <span className="font-bold text-purple-300">{item.count} Recipients</span>
+                  </div>
                   <div className="text-slate-500 font-mono truncate">{item.signatures.length} TX Signatures saved</div>
-                  <div className="pt-2 border-t border-slate-800 flex items-center justify-between gap-2">
+                  <div className="pt-2 border-t border-slate-800 flex items-center justify-between gap-2 flex-wrap">
                     {item.signatures[0] && (
                       <a href={solscan(item.signatures[0])} target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline font-semibold">
                         View First Tx ↗
                       </a>
                     )}
-                    {/* 👈 زر التصدير الجديد */}
                     <button
                       onClick={() => exportHistoryItem(item)}
                       className="text-[10px] px-2 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30 transition-all"
@@ -426,8 +440,9 @@ export default function Home() {
                 </div>
               ))}
             </div>
-          </section>
-        )}
+          )}
+        </section>
+        {/* نهاية قسم السجل */}
       </div>
     </div>
   );

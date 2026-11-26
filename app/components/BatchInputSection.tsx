@@ -90,29 +90,31 @@ export default function BatchInputSection({
 
   return (
     <section 
-      className={`md:col-span-3 p-6 md:p-8 rounded-3xl bg-slate-900/60 border border-purple-500/20 backdrop-blur-xl shadow-2xl shadow-purple-900/10 transition-all ${isDragging ? "border-dashed border-cyan-400 bg-slate-800/80" : ""}`}
+      className={`md:col-span-3 p-4 sm:p-6 md:p-8 rounded-3xl bg-slate-900/60 border border-purple-500/20 backdrop-blur-xl shadow-2xl shadow-purple-900/10 transition-all ${isDragging ? "border-dashed border-cyan-400 bg-slate-800/80" : ""}`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       dir={t.dir}
     >
       <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        {/* Header + Feature buttons: stacked on mobile, 2-col grid for buttons */}
+        <div className="flex flex-col gap-3">
           <h2 className="text-lg font-bold text-slate-200 flex items-center gap-2">
             <span className="inline-block w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
             {t.newBatch}
           </h2>
-          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-            <button onClick={() => setShowAiFeePanel(prev => !prev)} className="text-xs px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 transition-all">⚡ {t.aiGasBtn}</button>
-            <button onClick={() => setShowWebhookPanel(prev => !prev)} className="text-xs px-3 py-1.5 rounded-xl bg-pink-500/20 hover:bg-pink-500/30 text-pink-300 border border-pink-500/30 transition-all">🔔 {t.alertsBtn}</button>
-            <button onClick={() => setShowSchedulePanel(prev => !prev)} className="text-xs px-3 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 transition-all">📅 {t.payrollsBtn}</button>
-            <button onClick={() => setShowMultisigPanel(prev => !prev)} className="text-xs px-3 py-1.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/30 transition-all">🏛️ {t.multiSigBtn}</button>
-            <button onClick={() => setShowAddressBook(prev => !prev)} className="text-xs px-3 py-1.5 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30 transition-all">📖 {t.contactsBtn}</button>
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 w-full">
+            <button onClick={() => setShowAiFeePanel(prev => !prev)} className="text-[11px] sm:text-xs px-2 sm:px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 transition-all truncate">⚡ {t.aiGasBtn}</button>
+            <button onClick={() => setShowWebhookPanel(prev => !prev)} className="text-[11px] sm:text-xs px-2 sm:px-3 py-1.5 rounded-xl bg-pink-500/20 hover:bg-pink-500/30 text-pink-300 border border-pink-500/30 transition-all truncate">🔔 {t.alertsBtn}</button>
+            <button onClick={() => setShowSchedulePanel(prev => !prev)} className="text-[11px] sm:text-xs px-2 sm:px-3 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 transition-all truncate">📅 {t.payrollsBtn}</button>
+            <button onClick={() => setShowMultisigPanel(prev => !prev)} className="text-[11px] sm:text-xs px-2 sm:px-3 py-1.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/30 transition-all truncate">🏛️ {t.multiSigBtn}</button>
+            <button onClick={() => setShowAddressBook(prev => !prev)} className="text-[11px] sm:text-xs px-2 sm:px-3 py-1.5 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30 transition-all truncate col-span-2 sm:col-span-1">📖 {t.contactsBtn}</button>
           </div>
         </div>
 
         {children}
 
+        {/* Mint input */}
         <div className="space-y-1 mt-4">
           <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t.mintLabel}</label>
           <input
@@ -123,12 +125,13 @@ export default function BatchInputSection({
           />
         </div>
 
+        {/* Recipients */}
         <div className="space-y-3 mt-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
               {t.recipientsLabel} ({recipientRows.length})
             </label>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <button onClick={() => setInputMode(inputMode === "rows" ? "csv" : "rows")} className="text-xs text-purple-400 hover:text-purple-300 underline font-semibold transition-colors">
                 {inputMode === "rows" ? t.switchToCsv : t.switchToRows}
               </button>
@@ -141,12 +144,12 @@ export default function BatchInputSection({
           </div>
 
           {recipientRows.length > 0 && (
-            <div className="flex flex-wrap items-center gap-3 text-xs font-bold bg-slate-950/50 p-2 rounded-lg border border-slate-800">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs font-bold bg-slate-950/50 p-2 rounded-lg border border-slate-800">
               <span className="text-slate-400">{t.validationLabel}:</span>
               <span className="text-emerald-400">{stats.valid} {t.validLabel}</span>
               {stats.invalid > 0 && <span className="text-rose-400">{stats.invalid} {t.invalidLabel}</span>}
               {totalAmount > 0 && !mint && solPrice && (
-                <span className="text-cyan-400 ms-auto">
+                <span className="text-cyan-400 w-full sm:w-auto sm:ms-auto text-[11px] sm:text-xs">
                   {t.totalLabel}: {totalAmount.toFixed(2)} SOL ≈ ${(totalAmount * solPrice).toFixed(2)}
                 </span>
               )}
@@ -154,7 +157,7 @@ export default function BatchInputSection({
           )}
 
           {inputMode === "rows" ? (
-            <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1">
+            <div className="space-y-2.5 max-h-72 sm:max-h-64 overflow-y-auto pr-1">
               {recipientRows.map((row, idx) => {
                 let isValid = true;
                 if (row.address.trim() !== "") {
@@ -166,36 +169,40 @@ export default function BatchInputSection({
 
                 return (
                   <div key={row.id} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-2 rounded-2xl bg-slate-950/80 border border-slate-800">
-                    <span className="text-xs font-bold text-slate-500 w-6 text-center">#{idx + 1}</span>
-                    <input 
-                      type="text" 
-                      placeholder={t.addressPlaceholder}
-                      value={row.address} 
-                      onChange={(e) => updateRow(row.id, "address", e.target.value)} 
-                      className={`w-full min-w-0 flex-1 bg-slate-900 border text-xs rounded-xl px-3 py-2 text-slate-200 outline-none transition-colors ${
-                        row.address.trim() !== "" && !isValid ? "border-rose-500 focus:border-rose-400" : "border-slate-800 focus:border-purple-500"
-                      }`} 
-                    />
-                    <div className="flex flex-col gap-0.5 w-full sm:w-auto">
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                      <span className="text-xs font-bold text-slate-500 w-6 text-center shrink-0">#{idx + 1}</span>
                       <input 
                         type="text" 
-                        placeholder={t.amountPlaceholder}
-                        value={row.amount} 
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          if (/^\d*\.?\d*$/.test(val)) {
-                            updateRow(row.id, "amount", val);
-                          }
-                        }} 
-                        className="w-full sm:w-24 bg-slate-900 border border-slate-800 text-xs rounded-xl px-3 py-2 text-slate-200 outline-none focus:border-purple-500" 
+                        placeholder={t.addressPlaceholder}
+                        value={row.address} 
+                        onChange={(e) => updateRow(row.id, "address", e.target.value)} 
+                        className={`w-full min-w-0 flex-1 bg-slate-900 border text-xs rounded-xl px-3 py-2 text-slate-200 outline-none transition-colors ${
+                          row.address.trim() !== "" && !isValid ? "border-rose-500 focus:border-rose-400" : "border-slate-800 focus:border-purple-500"
+                        }`} 
                       />
-                      {rowUSD !== null && rowUSD > 0 && (
-                        <span className="text-[9px] text-slate-500 text-end font-mono">
-                          ≈ ${rowUSD.toFixed(2)}
-                        </span>
-                      )}
                     </div>
-                    <button onClick={() => removeRow(row.id)} className="p-2 rounded-xl text-rose-400 hover:bg-rose-500/10 transition-all text-xs" title="Remove Row">✕</button>
+                    <div className="flex items-end gap-2 w-full sm:w-auto">
+                      <div className="flex flex-col gap-0.5 flex-1 sm:flex-initial">
+                        <input 
+                          type="text" 
+                          placeholder={t.amountPlaceholder}
+                          value={row.amount} 
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (/^\d*\.?\d*$/.test(val)) {
+                              updateRow(row.id, "amount", val);
+                            }
+                          }} 
+                          className="w-full sm:w-24 bg-slate-900 border border-slate-800 text-xs rounded-xl px-3 py-2 text-slate-200 outline-none focus:border-purple-500" 
+                        />
+                        {rowUSD !== null && rowUSD > 0 && (
+                          <span className="text-[9px] text-slate-500 text-end font-mono">
+                            ≈ ${rowUSD.toFixed(2)}
+                          </span>
+                        )}
+                      </div>
+                      <button onClick={() => removeRow(row.id)} className="p-2 rounded-xl text-rose-400 hover:bg-rose-500/10 transition-all text-xs shrink-0" title="Remove Row">✕</button>
+                    </div>
                   </div>
                 );
               })}
@@ -226,7 +233,7 @@ export default function BatchInputSection({
         )}
 
         <div className="space-y-4 pt-2">
-          <div className="flex flex-col sm:flex-row items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <label className="cursor-pointer w-full sm:w-auto px-5 py-3 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-200 border border-slate-700 transition-all text-sm font-medium flex items-center justify-center gap-2">
               <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
               {t.uploadBtn}

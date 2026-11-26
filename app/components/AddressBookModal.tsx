@@ -26,23 +26,24 @@ export default function AddressBookModal({
   if (!isOpen) return null;
 
   return (
-    <div className="p-4 rounded-2xl bg-slate-950/80 border border-purple-500/30 space-y-3 animate-fadeIn">
-      <div className="flex items-center justify-between">
+    <div className="p-3 sm:p-4 rounded-2xl bg-slate-950/80 border border-purple-500/30 space-y-3 animate-fadeIn">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
         <h3 className="text-xs font-bold text-purple-300 uppercase tracking-wider">Smart Contacts</h3>
         <span className="text-[10px] text-slate-500">Save & load recipient groups</span>
       </div>
 
-      <div className="flex gap-2">
+      {/* Fix: stacked on mobile, side-by-side on sm+ */}
+      <div className="flex flex-col sm:flex-row gap-2">
         <input
           type="text"
           placeholder="Group Name (e.g. Core Team Payroll)"
           value={groupNameInput}
           onChange={(e) => setGroupNameInput(e.target.value)}
-          className="flex-1 bg-slate-900 border border-slate-800 text-xs rounded-xl px-3 py-2 text-slate-200 outline-none focus:border-purple-500"
+          className="w-full sm:flex-1 bg-slate-900 border border-slate-800 text-xs rounded-xl px-3 py-2 text-slate-200 outline-none focus:border-purple-500"
         />
         <button
           onClick={saveCurrentGroup}
-          className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition-all"
+          className="w-full sm:w-auto px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition-all shrink-0"
         >
           Save Current
         </button>
@@ -53,12 +54,12 @@ export default function AddressBookModal({
       ) : (
         <div className="grid gap-2 max-h-40 overflow-y-auto pr-1">
           {addressGroups.map((g) => (
-            <div key={g.id} className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs">
-              <div>
-                <span className="font-bold text-slate-200">{g.name}</span>
-                <span className="text-slate-500 ml-2">({g.content.split("\n").length - 1} recipients)</span>
+            <div key={g.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs">
+              <div className="min-w-0 flex-1">
+                <span className="font-bold text-slate-200 block truncate">{g.name}</span>
+                <span className="text-slate-500 text-[10px]">({g.content.split("\n").length - 1} recipients)</span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
                 <button
                   onClick={() => { loadGroupToRows(g.content); addToast(`Loaded group: ${g.name}`, "success"); setShowAddressBook(false); }}
                   className="text-cyan-400 hover:underline font-semibold"
