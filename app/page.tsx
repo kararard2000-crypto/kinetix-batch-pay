@@ -18,7 +18,8 @@ import BatchInputSection from "./components/BatchInputSection";
 type Job = { status: Status | "Queued"; sig?: string; err?: string };
 type HistoryItem = { id: string; date: string; count: number; signatures: string[] };
 type SavedGroup = { id: string; name: string; content: string };
-type ScheduledPayroll = { id: string; title: string; interval: "weekly" | "monthly"; nextRun: string; content: string; active: boolean };
+// تحديث النوع ليتوافق مع Supabase (next_run بدلاً من nextRun)
+type ScheduledPayroll = { id: string; title: string; interval: "weekly" | "monthly"; next_run: string; content: string; active: boolean; wallet_address: string };
 type RecipientRow = { id: string; address: string; amount: string };
 
 const getClusterParam = () => {
@@ -148,6 +149,26 @@ export default function Home() {
     }
   }, [recipientRows, inputMode]);
 
+  // ✅ تحميل الجداول من Supabase بدلاً من localStorage
+  useEffect(() => {
+    if (!publicKey) {
+      setScheduledPayrolls([]);
+      return;
+    }
+    
+    const fetchPayrolls = async () => {
+      try {
+        const res = await fetch(`/api/payrolls?wallet=${publicKey.toBase58()}`);
+        if (res.ok) {
+          const data = await res.json();
+          setScheduledPayrolls(data);
+        }
+      } catch (e) { console.error("Failed to load payrolls", e); }
+    };
+    fetchPayrolls();
+  }, [publicKey]);
+
+  // تحميل الإعدادات المحلية (اللغة، السجل، إلخ)
   useEffect(() => {
     const saved = localStorage.getItem("kntx_locale") as Locale;
     if (saved && translations[saved]) setLocale(saved);
@@ -155,8 +176,6 @@ export default function Home() {
     if (savedHistory) { try { setHistory(JSON.parse(savedHistory)); } catch { } }
     const savedGroups = localStorage.getItem("kntx_address_groups");
     if (savedGroups) { try { setAddressGroups(JSON.parse(savedGroups)); } catch { } }
-    const savedSchedules = localStorage.getItem("kntx_scheduled_payrolls");
-    if (savedSchedules) { try { setScheduledPayrolls(JSON.parse(savedSchedules)); } catch { } }
     const savedTgToken = localStorage.getItem("kntx_tg_token");
     const savedTgChat = localStorage.getItem("kntx_tg_chat");
     const savedDcHook = localStorage.getItem("kntx_dc_hook");
@@ -234,26 +253,63 @@ export default function Home() {
     });
     if (newRows.length > 0) { setRecipientRows(newRows); setInputMode("rows"); }
   };
-  const saveScheduledPayroll = () => {
+
+  // ✅ حفظ الجدولة في Supabase
+  const saveScheduledPayroll = async () => {
     if (!scheduleTitleInput.trim() || !text.trim()) { addToast("Please enter a schedule title and recipient data.", "error"); return; }
+    if (!publicKey) { addToast("Please connect your wallet first.", "error"); return; }
+
     const nextDate = new Date();
     if (scheduleIntervalInput === "weekly") nextDate.setDate(nextDate.getDate() + 7);
     else nextDate.setMonth(nextDate.getMonth() + 1);
-    const newSchedule: ScheduledPayroll = { id: Math.random().toString(36).substring(2, 9), title: scheduleTitleInput.trim(), interval: scheduleIntervalInput, nextRun: nextDate.toLocaleDateString(), content: text, active: true };
-    const updated = [newSchedule, ...scheduledPayrolls];
-    setScheduledPayrolls(updated); localStorage.setItem("kntx_scheduled_payrolls", JSON.stringify(updated));
-    setScheduleTitleInput(""); addToast(`Payroll schedule "${newSchedule.title}" created successfully!`, "success");
+
+    try {
+      const res = await fetch('/api/payrolls', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          wallet_address: publicKey.toBase58(),
+          title: scheduleTitleInput.trim(),
+          interval: scheduleIntervalInput,
+          next_run: nextDate.toISOString(),
+          content: text,
+        }),
+      });
+      
+      if (!res.ok) throw new Error('Failed to save schedule');
+      
+      const newData = await res.json();
+      setScheduledPayrolls([newData[0], ...scheduledPayrolls]);
+      setScheduleTitleInput(""); 
+      addToast(`Payroll schedule "${scheduleTitleInput.trim()}" saved to database!`, "success");
+    } catch (e: any) {
+      addToast(e.message || "Failed to save schedule", "error");
+    }
   };
-  const toggleSchedule = (id: string) => {
+
+  // ✅ تحديث حالة الجدولة
+  const toggleSchedule = async (id: string) => {
+    const schedule = scheduledPayrolls.find(s => s.id === id);
+    if (!schedule) return;
+    // تحديث محلي (لاحقاً يمكنك إضافة API لتحديثها في قاعدة البيانات)
     const updated = scheduledPayrolls.map((s) => s.id === id ? { ...s, active: !s.active } : s);
-    setScheduledPayrolls(updated); localStorage.setItem("kntx_scheduled_payrolls", JSON.stringify(updated));
-    addToast("Payroll schedule status updated.", "info");
+    setScheduledPayrolls(updated);
+    addToast("Payroll schedule status updated locally.", "info");
   };
-  const deleteSchedule = (id: string) => {
-    const updated = scheduledPayrolls.filter((s) => s.id !== id);
-    setScheduledPayrolls(updated); localStorage.setItem("kntx_scheduled_payrolls", JSON.stringify(updated));
-    addToast("Payroll schedule removed.", "info");
+
+  // ✅ حذف الجدولة من Supabase
+  const deleteSchedule = async (id: string) => {
+    try {
+      const res = await fetch(`/api/payrolls?id=${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete');
+      const updated = scheduledPayrolls.filter((s) => s.id !== id);
+      setScheduledPayrolls(updated);
+      addToast("Payroll schedule deleted from database.", "info");
+    } catch (e: any) {
+      addToast(e.message || "Failed to delete schedule", "error");
+    }
   };
+
   const saveWebhookSettings = () => {
     localStorage.setItem("kntx_tg_token", telegramToken);
     localStorage.setItem("kntx_tg_chat", telegramChatId);
@@ -277,7 +333,6 @@ export default function Home() {
   };
   const clearHistory = () => { setHistory([]); localStorage.removeItem("kntx_batch_history"); addToast("Batch history cleared.", "info"); };
 
-  // 👈 دالة تصدير سجل معين كـ CSV
   const exportHistoryItem = (item: HistoryItem) => {
     let csv = "TransactionIndex,Signature,ExplorerLink\n";
     item.signatures.forEach((sig, i) => {
