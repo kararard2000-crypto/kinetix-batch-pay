@@ -18,7 +18,6 @@ import BatchInputSection from "./components/BatchInputSection";
 type Job = { status: Status | "Queued"; sig?: string; err?: string };
 type HistoryItem = { id: string; date: string; count: number; signatures: string[] };
 type SavedGroup = { id: string; name: string; content: string };
-// تحديث النوع ليتوافق مع Supabase (next_run بدلاً من nextRun)
 type ScheduledPayroll = { id: string; title: string; interval: "weekly" | "monthly"; next_run: string; content: string; active: boolean; wallet_address: string };
 type RecipientRow = { id: string; address: string; amount: string };
 
@@ -149,7 +148,6 @@ export default function Home() {
     }
   }, [recipientRows, inputMode]);
 
-  // ✅ تحميل الجداول من Supabase بدلاً من localStorage
   useEffect(() => {
     if (!publicKey) {
       setScheduledPayrolls([]);
@@ -168,7 +166,6 @@ export default function Home() {
     fetchPayrolls();
   }, [publicKey]);
 
-  // تحميل الإعدادات المحلية (اللغة، السجل، إلخ)
   useEffect(() => {
     const saved = localStorage.getItem("kntx_locale") as Locale;
     if (saved && translations[saved]) setLocale(saved);
@@ -254,7 +251,6 @@ export default function Home() {
     if (newRows.length > 0) { setRecipientRows(newRows); setInputMode("rows"); }
   };
 
-  // ✅ حفظ الجدولة في Supabase
   const saveScheduledPayroll = async () => {
     if (!scheduleTitleInput.trim() || !text.trim()) { addToast("Please enter a schedule title and recipient data.", "error"); return; }
     if (!publicKey) { addToast("Please connect your wallet first.", "error"); return; }
@@ -276,28 +272,29 @@ export default function Home() {
         }),
       });
       
-      if (!res.ok) throw new Error('Failed to save schedule');
+      const responseData = await res.json();
+
+      if (!res.ok) {
+        throw new Error(responseData.error || 'Unknown error');
+      }
       
-      const newData = await res.json();
-      setScheduledPayrolls([newData[0], ...scheduledPayrolls]);
+      setScheduledPayrolls([responseData[0], ...scheduledPayrolls]);
       setScheduleTitleInput(""); 
       addToast(`Payroll schedule "${scheduleTitleInput.trim()}" saved to database!`, "success");
     } catch (e: any) {
-      addToast(e.message || "Failed to save schedule", "error");
+      addToast(`Save failed: ${e.message}`, "error");
+      console.error("Supabase Save Error:", e);
     }
   };
 
-  // ✅ تحديث حالة الجدولة
   const toggleSchedule = async (id: string) => {
     const schedule = scheduledPayrolls.find(s => s.id === id);
     if (!schedule) return;
-    // تحديث محلي (لاحقاً يمكنك إضافة API لتحديثها في قاعدة البيانات)
     const updated = scheduledPayrolls.map((s) => s.id === id ? { ...s, active: !s.active } : s);
     setScheduledPayrolls(updated);
     addToast("Payroll schedule status updated locally.", "info");
   };
 
-  // ✅ حذف الجدولة من Supabase
   const deleteSchedule = async (id: string) => {
     try {
       const res = await fetch(`/api/payrolls?id=${id}`, { method: 'DELETE' });
@@ -461,7 +458,6 @@ export default function Home() {
           <SummaryDashboard t={t} plan={plan} feeLabel={feeLabel} sol={sol} tousd={tousd} jobs={jobs} tone={tone} solscan={solscan} />
         </div>
         
-        {/* بداية قسم السجل (History) */}
         <section className="p-4 sm:p-6 md:p-8 rounded-3xl bg-slate-900/60 border border-purple-500/20 backdrop-blur-xl shadow-xl space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
             <h2 className="text-base sm:text-lg font-bold text-slate-200 flex items-center gap-2">
@@ -504,7 +500,6 @@ export default function Home() {
             </div>
           )}
         </section>
-        {/* نهاية قسم السجل */}
       </div>
     </div>
   );
