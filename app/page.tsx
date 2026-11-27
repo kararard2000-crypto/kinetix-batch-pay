@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-import { createClient } from "@supabase/supabase-js"; // 👈 أضفنا المكتبة هنا
 import { Fee, Status, buildBatch, finalize, parseInput, priorityFee, resolveAsset, send, validate } from "@/lib/batch";
 import { translations, Locale } from "@/lib/i18n";
 import ToastContainer, { type Toast } from "./components/ToastContainer";
@@ -85,11 +84,6 @@ export default function Home() {
     sampleSize: number; lastUpdate: string;
   } | null>(null);
 
-  // 👈 تهيئة Supabase Client
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://wwmtsfvxsqoxrzreeeu.supabase.co';
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_3I982ATgmZ40-AGr8T_eag_WX7KIb2n';
-  const supabase = createClient(supabaseUrl, supabaseKey);
-
   useEffect(() => {
     if (!connection) return;
     const fetchPriorityFees = async () => {
@@ -154,7 +148,7 @@ export default function Home() {
     }
   }, [recipientRows, inputMode]);
 
-  // ✅ تحميل الجداول باستخدام Supabase Client
+  // ✅ تحميل الجداول من الـ API Route
   useEffect(() => {
     if (!publicKey) {
       setScheduledPayrolls([]);
@@ -163,17 +157,12 @@ export default function Home() {
     
     const fetchPayrolls = async () => {
       try {
-        const { data, error } = await supabase
-          .from('payrolls')
-          .select('*')
-          .eq('wallet_address', publicKey.toBase58())
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-        setScheduledPayrolls(data);
-      } catch (e) { 
-        console.error("Failed to load payrolls", e); 
-      }
+        const res = await fetch(`/api/payrolls?wallet=${publicKey.toBase58()}`);
+        if (res.ok) {
+          const data = await res.json();
+          setScheduledPayrolls(data);
+        }
+      } catch (e) { console.error("Failed to load payrolls", e); }
     };
     fetchPayrolls();
   }, [publicKey]);
@@ -263,7 +252,7 @@ export default function Home() {
     if (newRows.length > 0) { setRecipientRows(newRows); setInputMode("rows"); }
   };
 
-  // ✅ حفظ باستخدام Supabase Client
+  // ✅ حفظ عبر الـ API Route
   const saveScheduledPayroll = async () => {
     if (!scheduleTitleInput.trim() || !text.trim()) { addToast("Please enter a schedule title and recipient data.", "error"); return; }
     if (!publicKey) { addToast("Please connect your wallet first.", "error"); return; }
@@ -273,20 +262,25 @@ export default function Home() {
     else nextDate.setMonth(nextDate.getMonth() + 1);
 
     try {
-      const { data, error } = await supabase
-        .from('payrolls')
-        .insert([{
+      const res = await fetch('/api/payrolls', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           wallet_address: publicKey.toBase58(),
           title: scheduleTitleInput.trim(),
           interval: scheduleIntervalInput,
           next_run: nextDate.toISOString(),
           content: text,
-        }])
-        .select();
-
-      if (error) throw error;
+        }),
+      });
       
-      setScheduledPayrolls([data[0], ...scheduledPayrolls]);
+      const responseData = await res.json();
+
+      if (!res.ok) {
+        throw new Error(responseData.error || 'Unknown error');
+      }
+      
+      setScheduledPayrolls([responseData[0], ...scheduledPayrolls]);
       setScheduleTitleInput(""); 
       addToast(`Payroll schedule "${scheduleTitleInput.trim()}" saved to database!`, "success");
     } catch (e: any) {
@@ -303,16 +297,11 @@ export default function Home() {
     addToast("Payroll schedule status updated locally.", "info");
   };
 
-  // ✅ حذف باستخدام Supabase Client
+  // ✅ حذف عبر الـ API Route
   const deleteSchedule = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('payrolls')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      
+      const res = await fetch(`/api/payrolls?id=${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete');
       const updated = scheduledPayrolls.filter((s) => s.id !== id);
       setScheduledPayrolls(updated);
       addToast("Payroll schedule deleted from database.", "info");
