@@ -1,9 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 
+// نستخدم الأسماء التي أضفتها في Vercel
 const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
-const supabaseKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
+const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY || '';
 
-// التحقق من وجود المتغيرات
 if (!supabaseUrl || !supabaseKey) {
   console.warn('⚠️ Supabase environment variables are missing! Check your Vercel settings.');
 }
