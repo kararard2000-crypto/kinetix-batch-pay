@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { createClient } from "@supabase/supabase-js"; // 👈 أضفنا المكتبة هنا
 import { Fee, Status, buildBatch, finalize, parseInput, priorityFee, resolveAsset, send, validate } from "@/lib/batch";
 import { translations, Locale } from "@/lib/i18n";
 import ToastContainer, { type Toast } from "./components/ToastContainer";
@@ -84,6 +85,11 @@ export default function Home() {
     sampleSize: number; lastUpdate: string;
   } | null>(null);
 
+  // 👈 تهيئة Supabase Client
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://wwmtsfvxsqoxrzreeeu.supabase.co';
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_3I982ATgmZ40-AGr8T_eag_WX7KIb2n';
+  const supabase = createClient(supabaseUrl, supabaseKey);
+
   useEffect(() => {
     if (!connection) return;
     const fetchPriorityFees = async () => {
@@ -148,7 +154,7 @@ export default function Home() {
     }
   }, [recipientRows, inputMode]);
 
-  // ✅ تحميل الجداول مباشرة من Supabase (بدون API Route) مع تنظيف الرابط
+  // ✅ تحميل الجداول باستخدام Supabase Client
   useEffect(() => {
     if (!publicKey) {
       setScheduledPayrolls([]);
@@ -157,22 +163,17 @@ export default function Home() {
     
     const fetchPayrolls = async () => {
       try {
-        const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://wwmtsfvxsqoxrzreeeu.supabase.co';
-        const url = rawUrl.replace(/\/$/, ''); // إزالة أي شرطة مائلة في النهاية
-        const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_3I982ATgmZ40-AGr8T_eag_WX7KIb2n';
-        
-        const res = await fetch(`${url}/rest/v1/payrolls?wallet_address=eq.${publicKey.toBase58()}&order=created_at.desc`, {
-          headers: { 'apikey': key, 'Authorization': `Bearer ${key}` }
-        });
-        
-        if (res.ok) {
-          const data = await res.json();
-          setScheduledPayrolls(data);
-        } else {
-          const err = await res.json();
-          console.error("Load failed:", err);
-        }
-      } catch (e) { console.error("Failed to load payrolls", e); }
+        const { data, error } = await supabase
+          .from('payrolls')
+          .select('*')
+          .eq('wallet_address', publicKey.toBase58())
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        setScheduledPayrolls(data);
+      } catch (e) { 
+        console.error("Failed to load payrolls", e); 
+      }
     };
     fetchPayrolls();
   }, [publicKey]);
@@ -262,6 +263,7 @@ export default function Home() {
     if (newRows.length > 0) { setRecipientRows(newRows); setInputMode("rows"); }
   };
 
+  // ✅ حفظ باستخدام Supabase Client
   const saveScheduledPayroll = async () => {
     if (!scheduleTitleInput.trim() || !text.trim()) { addToast("Please enter a schedule title and recipient data.", "error"); return; }
     if (!publicKey) { addToast("Please connect your wallet first.", "error"); return; }
@@ -271,36 +273,20 @@ export default function Home() {
     else nextDate.setMonth(nextDate.getMonth() + 1);
 
     try {
-      const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://wwmtsfvxsqoxrzreeeu.supabase.co';
-      const url = rawUrl.replace(/\/$/, ''); // إزالة أي شرطة مائلة في النهاية
-      const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_3I982ATgmZ40-AGr8T_eag_WX7KIb2n';
-
-      console.log("Trying to save to:", `${url}/rest/v1/payrolls`);
-
-      const res = await fetch(`${url}/rest/v1/payrolls`, {
-        method: 'POST',
-        headers: {
-          'apikey': key,
-          'Authorization': `Bearer ${key}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=representation'
-        },
-        body: JSON.stringify({
+      const { data, error } = await supabase
+        .from('payrolls')
+        .insert([{
           wallet_address: publicKey.toBase58(),
           title: scheduleTitleInput.trim(),
           interval: scheduleIntervalInput,
           next_run: nextDate.toISOString(),
           content: text,
-        }),
-      });
-      
-      const responseData = await res.json();
+        }])
+        .select();
 
-      if (!res.ok) {
-        throw new Error(responseData.message || responseData.error || 'Failed to save');
-      }
+      if (error) throw error;
       
-      setScheduledPayrolls([responseData[0], ...scheduledPayrolls]);
+      setScheduledPayrolls([data[0], ...scheduledPayrolls]);
       setScheduleTitleInput(""); 
       addToast(`Payroll schedule "${scheduleTitleInput.trim()}" saved to database!`, "success");
     } catch (e: any) {
@@ -317,18 +303,15 @@ export default function Home() {
     addToast("Payroll schedule status updated locally.", "info");
   };
 
+  // ✅ حذف باستخدام Supabase Client
   const deleteSchedule = async (id: string) => {
     try {
-      const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://wwmtsfvxsqoxrzreeeu.supabase.co';
-      const url = rawUrl.replace(/\/$/, '');
-      const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_3I982ATgmZ40-AGr8T_eag_WX7KIb2n';
+      const { error } = await supabase
+        .from('payrolls')
+        .delete()
+        .eq('id', id);
 
-      const res = await fetch(`${url}/rest/v1/payrolls?id=eq.${id}`, {
-        method: 'DELETE',
-        headers: { 'apikey': key, 'Authorization': `Bearer ${key}` }
-      });
-      
-      if (!res.ok) throw new Error('Failed to delete');
+      if (error) throw error;
       
       const updated = scheduledPayrolls.filter((s) => s.id !== id);
       setScheduledPayrolls(updated);
