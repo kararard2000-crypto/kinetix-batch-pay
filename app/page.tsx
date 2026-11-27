@@ -148,7 +148,7 @@ export default function Home() {
     }
   }, [recipientRows, inputMode]);
 
-  // ✅ تحميل الجداول مباشرة من Supabase (بدون API Route)
+  // ✅ تحميل الجداول مباشرة من Supabase (بدون API Route) مع تنظيف الرابط
   useEffect(() => {
     if (!publicKey) {
       setScheduledPayrolls([]);
@@ -157,7 +157,8 @@ export default function Home() {
     
     const fetchPayrolls = async () => {
       try {
-        const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://wwmtsfvxsqoxrzreeeu.supabase.co';
+        const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://wwmtsfvxsqoxrzreeeu.supabase.co';
+        const url = rawUrl.replace(/\/$/, ''); // إزالة أي شرطة مائلة في النهاية
         const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_3I982ATgmZ40-AGr8T_eag_WX7KIb2n';
         
         const res = await fetch(`${url}/rest/v1/payrolls?wallet_address=eq.${publicKey.toBase58()}&order=created_at.desc`, {
@@ -270,8 +271,11 @@ export default function Home() {
     else nextDate.setMonth(nextDate.getMonth() + 1);
 
     try {
-      const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://wwmtsfvxsqoxrzreeeu.supabase.co';
+      const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://wwmtsfvxsqoxrzreeeu.supabase.co';
+      const url = rawUrl.replace(/\/$/, ''); // إزالة أي شرطة مائلة في النهاية
       const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_3I982ATgmZ40-AGr8T_eag_WX7KIb2n';
+
+      console.log("Trying to save to:", `${url}/rest/v1/payrolls`);
 
       const res = await fetch(`${url}/rest/v1/payrolls`, {
         method: 'POST',
@@ -301,6 +305,7 @@ export default function Home() {
       addToast(`Payroll schedule "${scheduleTitleInput.trim()}" saved to database!`, "success");
     } catch (e: any) {
       addToast(`Save failed: ${e.message}`, "error");
+      console.error("Save error details:", e);
     }
   };
 
@@ -314,7 +319,8 @@ export default function Home() {
 
   const deleteSchedule = async (id: string) => {
     try {
-      const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://wwmtsfvxsqoxrzreeeu.supabase.co';
+      const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://wwmtsfvxsqoxrzreeeu.supabase.co';
+      const url = rawUrl.replace(/\/$/, '');
       const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_3I982ATgmZ40-AGr8T_eag_WX7KIb2n';
 
       const res = await fetch(`${url}/rest/v1/payrolls?id=eq.${id}`, {
